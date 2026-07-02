@@ -6,7 +6,9 @@
   "icon": "icon.png",
   "author": "hyder",
   "license": "MIT",
+  "platforms": ["macOS"],
   "categories": ["Productivity"],
+  "keywords": ["clock", "seconds", "time", "menu bar"],
   "commands": [
     {
       "name": "show-seconds-clock",
@@ -17,7 +19,7 @@
     {
       "name": "menu-bar-clock",
       "title": "Seconds Clock Menu Bar",
-      "description": "Render the live Seconds Clock menu bar item.",
+      "description": "Show the live Seconds Clock menu bar item.",
       "mode": "menu-bar"
     }
   ],
