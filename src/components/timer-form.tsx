@@ -3,9 +3,9 @@ import {
   ActionPanel,
   Form,
   Toast,
+  closeMainWindow,
   showHUD,
   showToast,
-  useNavigation,
 } from "@raycast/api";
 
 import {
@@ -22,8 +22,6 @@ type TimerFormValues = {
 };
 
 export function TimerForm() {
-  const { pop } = useNavigation();
-
   async function submitTimer(values: TimerFormValues) {
     const durationMs = durationPartsToMs(
       values.hours,
@@ -42,7 +40,7 @@ export function TimerForm() {
 
     await saveActiveActivity(createTimerActivity(durationMs, values.name));
     await showHUD("Timer Started");
-    pop();
+    await closeMainWindow({ clearRootSearch: true });
   }
 
   return (

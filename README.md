@@ -13,7 +13,18 @@ Opens the main clock view with:
 - Hours, minutes, and seconds
 - Date in `DD - MM - YYYY` format
 - 12-hour or 24-hour display based on the extension preference
-- Actions to set one timer or start one stopwatch
+
+### Set Timer
+
+Opens a focused timer form with:
+
+- Optional timer name
+- Hours, minutes, and seconds
+- One active timer at a time
+
+### Start Stopwatch
+
+Starts a stopwatch from zero and shows it in the menu bar.
 
 ### Seconds Clock Menu Bar
 

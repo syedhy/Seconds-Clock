@@ -96,6 +96,6 @@ export function renderClockSvg({ time, date }: ClockArtOptions): string {
   ${renderFlapCard(time.seconds, secondsX, "SECONDS")}
   ${meridiem}
 
-  <text x="380" y="296" text-anchor="middle" fill="#F6F1E8" font-family="SF Pro Text, -apple-system, BlinkMacSystemFont, Inter, Arial, sans-serif" font-size="24" font-weight="800" letter-spacing="5">${safeDate}</text>
+  <text x="380" y="312" text-anchor="middle" fill="#F6F1E8" font-family="SF Pro Text, -apple-system, BlinkMacSystemFont, Inter, Arial, sans-serif" font-size="24" font-weight="800" letter-spacing="5">${safeDate}</text>
 </svg>`;
 }

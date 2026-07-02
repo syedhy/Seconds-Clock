@@ -17,6 +17,18 @@
       "mode": "view"
     },
     {
+      "name": "set-timer",
+      "title": "Set Timer",
+      "description": "Set a named countdown timer for the menu bar.",
+      "mode": "view"
+    },
+    {
+      "name": "start-stopwatch",
+      "title": "Start Stopwatch",
+      "description": "Start a stopwatch in the menu bar.",
+      "mode": "no-view"
+    },
+    {
       "name": "menu-bar-clock",
       "title": "Seconds Clock Menu Bar",
       "description": "Show the active timer or stopwatch in the menu bar.",
