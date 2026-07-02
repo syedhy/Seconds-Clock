@@ -16,8 +16,7 @@ export default function Command() {
   return (
     <Detail
       navigationTitle="Seconds Clock"
-      isLoading={!clockImageUrl}
-      markdown={clockImageUrl ? renderClockMarkdown(clockImageUrl) : ""}
+      markdown={renderClockMarkdown(clockImageUrl)}
     />
   );
 }

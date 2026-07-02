@@ -62,9 +62,9 @@ export function renderClockSvg({ time, date }: ClockArtOptions): string {
   const meridiemX = secondsX + CARD_WIDTH + MERIDIEM_GAP;
   const meridiem = safeMeridiem
     ? `
-      <g transform="translate(${meridiemX} 117)">
+      <g transform="translate(${meridiemX} 132)">
         <rect x="0" y="0" width="${MERIDIEM_WIDTH}" height="38" rx="12" fill="#F6F1E8" opacity="0.96" />
-        <text x="29" y="27" text-anchor="middle" fill="#18191C" font-family="SF Pro Display, -apple-system, BlinkMacSystemFont, Inter, Arial, sans-serif" font-size="22" font-weight="850" letter-spacing="1">${safeMeridiem}</text>
+        <text x="29" y="26" text-anchor="middle" fill="#18191C" font-family="SF Pro Display, -apple-system, BlinkMacSystemFont, Inter, Arial, sans-serif" font-size="22" font-weight="850" letter-spacing="1">${safeMeridiem}</text>
       </g>`
     : "";
 
@@ -96,6 +96,6 @@ export function renderClockSvg({ time, date }: ClockArtOptions): string {
   ${renderFlapCard(time.seconds, secondsX, "SECONDS")}
   ${meridiem}
 
-  <text x="380" y="288" text-anchor="middle" fill="#F6F1E8" font-family="SF Pro Text, -apple-system, BlinkMacSystemFont, Inter, Arial, sans-serif" font-size="24" font-weight="800" letter-spacing="5">${safeDate}</text>
+  <text x="380" y="282" text-anchor="middle" fill="#F6F1E8" font-family="SF Pro Text, -apple-system, BlinkMacSystemFont, Inter, Arial, sans-serif" font-size="24" font-weight="800" letter-spacing="5">${safeDate}</text>
 </svg>`;
 }

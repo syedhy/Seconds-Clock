@@ -1,8 +1,4 @@
-import { environment } from "@raycast/api";
-import { mkdirSync, writeFileSync } from "fs";
-import { join } from "path";
-import { pathToFileURL } from "url";
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 
 import { renderClockSvg } from "../lib/clock-art";
 import type { FormattedClockTime } from "../lib/time";
@@ -10,25 +6,10 @@ import type { FormattedClockTime } from "../lib/time";
 export function useClockArtwork(
   time: FormattedClockTime,
   date: string,
-): string | undefined {
-  const [imageUrl, setImageUrl] = useState<string>();
+): string {
+  return useMemo(() => {
+    const svg = renderClockSvg({ time, date });
 
-  useEffect(() => {
-    mkdirSync(environment.supportPath, { recursive: true });
-
-    const imagePath = join(environment.supportPath, "seconds-clock.svg");
-    writeFileSync(imagePath, renderClockSvg({ time, date }), "utf8");
-
-    const url = new URL(pathToFileURL(imagePath).href);
-    url.searchParams.set("raycast-width", "600");
-    url.searchParams.set("raycast-height", "284");
-    url.searchParams.set(
-      "v",
-      `${time.hours}-${time.minutes}-${time.seconds}-${time.meridiem ?? ""}`,
-    );
-
-    setImageUrl(url.toString());
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   }, [date, time.hours, time.minutes, time.seconds, time.meridiem]);
-
-  return imageUrl;
 }
