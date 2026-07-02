@@ -5,6 +5,7 @@ import { useActiveActivity } from "./hooks/use-active-activity";
 import { useNow } from "./hooks/use-now";
 import {
   formatActivityDuration,
+  extendTimer,
   getSelectedTimer,
   getStopwatchElapsedMs,
   getTimerRemainingMs,
@@ -101,6 +102,12 @@ function MenuBarContent({
     await refreshActivity();
   }
 
+  async function extendTimerAndRefresh(timerId: string, minutes: number) {
+    await extendTimer(timerId, minutes * 60 * 1000);
+    await showHUD(`Added ${minutes} Minutes`);
+    await refreshActivity();
+  }
+
   async function selectTimerAndRefresh(timerId: string) {
     await selectTimer(timerId);
     await refreshActivity();
@@ -122,6 +129,7 @@ function MenuBarContent({
             isSelected
             onSelect={selectTimerAndRefresh}
             onRemove={removeTimerAndRefresh}
+            onExtend={extendTimerAndRefresh}
           />
         </MenuBarExtra.Section>
       ) : null}
@@ -135,6 +143,7 @@ function MenuBarContent({
               now={now}
               onSelect={selectTimerAndRefresh}
               onRemove={removeTimerAndRefresh}
+              onExtend={extendTimerAndRefresh}
             />
           ))}
         </MenuBarExtra.Section>
@@ -163,12 +172,14 @@ function TimerMenuItem({
   isSelected = false,
   onSelect,
   onRemove,
+  onExtend,
 }: {
   timer: TimerActivity;
   now: number;
   isSelected?: boolean;
   onSelect: (timerId: string) => Promise<void>;
   onRemove: (timerId: string) => Promise<void>;
+  onExtend: (timerId: string, minutes: number) => Promise<void>;
 }) {
   return (
     <MenuBarExtra.Submenu
@@ -188,6 +199,16 @@ function TimerMenuItem({
         title="Stop Timer"
         icon={Icon.XMarkCircle}
         onAction={() => onRemove(timer.id)}
+      />
+      <MenuBarExtra.Item
+        title="Add 5 Minutes"
+        icon={Icon.Plus}
+        onAction={() => onExtend(timer.id, 5)}
+      />
+      <MenuBarExtra.Item
+        title="Add 30 Minutes"
+        icon={Icon.Plus}
+        onAction={() => onExtend(timer.id, 30)}
       />
     </MenuBarExtra.Submenu>
   );

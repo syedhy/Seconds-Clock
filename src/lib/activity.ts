@@ -1,6 +1,7 @@
 import { LaunchType, LocalStorage, launchCommand } from "@raycast/api";
 
 const ACTIVITY_STATE_KEY = "activityState";
+const FAVORITE_TIMERS_KEY = "favoriteTimers";
 const LEGACY_ACTIVE_ACTIVITY_KEY = "activeActivity";
 const SECOND_MS = 1000;
 const MINUTE_MS = 60 * SECOND_MS;
@@ -22,6 +23,17 @@ export type ActivityState = {
   timers: TimerActivity[];
   selectedTimerId?: string;
   stopwatch?: StopwatchActivity;
+};
+
+export type FavoriteTimer = {
+  id: string;
+  name?: string;
+  durationMs: number;
+};
+
+export type ParsedTimerInput = {
+  durationMs: number;
+  name?: string;
 };
 
 type LegacyActiveActivity =
@@ -68,6 +80,51 @@ export async function addTimer(
   });
 
   return timer;
+}
+
+export async function updateTimerName(
+  timerId: string,
+  name?: string,
+): Promise<ActivityState> {
+  const state = await getActivityState();
+  const timers = state.timers.map((timer) =>
+    timer.id === timerId
+      ? {
+          ...timer,
+          name: name?.trim() || undefined,
+        }
+      : timer,
+  );
+  const nextState = normalizeActivityState({
+    ...state,
+    timers,
+  });
+
+  await saveActivityState(nextState);
+  return nextState;
+}
+
+export async function extendTimer(
+  timerId: string,
+  additionalMs: number,
+): Promise<ActivityState> {
+  const state = await getActivityState();
+  const timers = state.timers.map((timer) =>
+    timer.id === timerId
+      ? {
+          ...timer,
+          durationMs: timer.durationMs + additionalMs,
+          endsAt: timer.endsAt + additionalMs,
+        }
+      : timer,
+  );
+  const nextState = normalizeActivityState({
+    ...state,
+    timers,
+  });
+
+  await saveActivityState(nextState);
+  return nextState;
 }
 
 export async function selectTimer(timerId: string): Promise<void> {
@@ -175,6 +232,50 @@ export async function showActivityInMenuBar(): Promise<void> {
   }
 }
 
+export async function getFavoriteTimers(): Promise<FavoriteTimer[]> {
+  const storedFavorites =
+    await LocalStorage.getItem<string>(FAVORITE_TIMERS_KEY);
+
+  if (!storedFavorites) {
+    return [];
+  }
+
+  try {
+    return JSON.parse(storedFavorites) as FavoriteTimer[];
+  } catch {
+    await LocalStorage.removeItem(FAVORITE_TIMERS_KEY);
+    return [];
+  }
+}
+
+export async function addFavoriteTimer(
+  durationMs: number,
+  name?: string,
+): Promise<FavoriteTimer> {
+  const favorites = await getFavoriteTimers();
+  const favorite = {
+    id: createActivityId(),
+    name: name?.trim() || undefined,
+    durationMs,
+  };
+
+  await LocalStorage.setItem(
+    FAVORITE_TIMERS_KEY,
+    JSON.stringify([...favorites, favorite]),
+  );
+
+  return favorite;
+}
+
+export async function removeFavoriteTimer(favoriteId: string): Promise<void> {
+  const favorites = await getFavoriteTimers();
+
+  await LocalStorage.setItem(
+    FAVORITE_TIMERS_KEY,
+    JSON.stringify(favorites.filter((favorite) => favorite.id !== favoriteId)),
+  );
+}
+
 export function getSelectedTimer(
   state: ActivityState,
 ): TimerActivity | undefined {
@@ -280,13 +381,22 @@ export function parseDurationInput(value: string): number {
     return parseColonDuration(normalizedValue);
   }
 
-  const matches = [...normalizedValue.matchAll(/(\d+)\s*([hms])/g)];
+  const matches = [
+    ...normalizedValue.matchAll(
+      /(\d+)\s*(hours?|hrs?|hr|h|minutes?|mins?|min|m|seconds?|secs?|sec|s)/g,
+    ),
+  ];
 
   if (matches.length > 0) {
-    const matchedText = matches.map((match) => match[0]).join("");
-    const compactInput = normalizedValue.replace(/\s/g, "");
+    const remainingInput = normalizedValue
+      .replace(
+        /(\d+)\s*(hours?|hrs?|hr|h|minutes?|mins?|min|m|seconds?|secs?|sec|s)/g,
+        "",
+      )
+      .replace(/\band\b/g, "")
+      .trim();
 
-    if (matchedText !== compactInput) {
+    if (remainingInput) {
       return Number.NaN;
     }
 
@@ -294,11 +404,11 @@ export function parseDurationInput(value: string): number {
       const amount = Number(match[1]);
       const unit = match[2];
 
-      if (unit === "h") {
+      if (unit.startsWith("h")) {
         return durationMs + amount * HOUR_MS;
       }
 
-      if (unit === "m") {
+      if (unit.startsWith("m")) {
         return durationMs + amount * MINUTE_MS;
       }
 
@@ -313,6 +423,66 @@ export function parseDurationInput(value: string): number {
   }
 
   return minutes * MINUTE_MS;
+}
+
+export function parseTimerInput(value: string): ParsedTimerInput | undefined {
+  const normalizedValue = value.trim();
+
+  if (!normalizedValue) {
+    return undefined;
+  }
+
+  const durationMs = parseDurationInput(normalizedValue);
+
+  if (Number.isFinite(durationMs) && durationMs > 0) {
+    return {
+      durationMs,
+    };
+  }
+
+  const durationMatches = [
+    ...normalizedValue.matchAll(
+      /(\d+)\s*(hours?|hrs?|hr|h|minutes?|mins?|min|m|seconds?|secs?|sec|s)/gi,
+    ),
+  ];
+
+  if (durationMatches.length === 0) {
+    return undefined;
+  }
+
+  const durationText = durationMatches.map((match) => match[0]).join(" ");
+  const parsedDurationMs = parseDurationInput(durationText);
+
+  if (!Number.isFinite(parsedDurationMs) || parsedDurationMs <= 0) {
+    return undefined;
+  }
+
+  const name = normalizedValue
+    .replace(
+      /(\d+)\s*(hours?|hrs?|hr|h|minutes?|mins?|min|m|seconds?|secs?|sec|s)/gi,
+      "",
+    )
+    .replace(/\band\b/gi, "")
+    .trim();
+
+  return {
+    durationMs: parsedDurationMs,
+    name: name || undefined,
+  };
+}
+
+export function formatDurationWords(durationMs: number): string {
+  const totalSeconds = Math.max(0, Math.floor(durationMs / SECOND_MS));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const parts = [
+    formatDurationPart(hours, "hour"),
+    formatDurationPart(minutes, "minute"),
+    formatDurationPart(seconds, "second"),
+  ].filter(Boolean);
+
+  return parts.join(" ");
 }
 
 export function getTimerTitle(timer: TimerActivity): string {
@@ -429,4 +599,12 @@ function parseColonDuration(value: string): number {
   }
 
   return hours * HOUR_MS + minutes * MINUTE_MS + seconds * SECOND_MS;
+}
+
+function formatDurationPart(value: number, label: string): string | undefined {
+  if (value === 0) {
+    return undefined;
+  }
+
+  return `${value} ${label}${value === 1 ? "" : "s"}`;
 }

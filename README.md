@@ -18,9 +18,10 @@ Opens the main clock view with:
 
 Opens a focused timer form with:
 
-- Optional timer name
-- Preset durations or custom hours, minutes, and seconds
-- Friendly custom formats like `30m 20s`, `1h 5m`, or `1:30:00`
+- One searchable input for timer duration
+- Friendly formats like `30m 20s`, `2hr 5min 3 sec`, `1h 5m`, or `1:30:00`
+- Optional names in the same input, like `Tea 15m`
+- Favorite timers that can be started again quickly
 - Multiple timers can run at once
 
 ### Manage Timers
@@ -28,6 +29,8 @@ Opens a focused timer form with:
 Shows all running timers with actions to:
 
 - Choose which timer appears in the menu bar
+- Rename timers
+- Save timers as favorites
 - Stop one timer
 - Stop all timers
 
@@ -54,6 +57,7 @@ Timer behavior:
 - Multiple named timers at once
 - Countdown with seconds
 - Menu-bar title shows the selected timer, or the soonest-ending timer by default
+- Menu-bar timer actions include adding 5 or 30 minutes
 - Finished timers show a Raycast completion indication and are removed automatically
 
 Stopwatch behavior:
