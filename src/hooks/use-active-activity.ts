@@ -1,24 +1,24 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { getActiveActivity, type ActiveActivity } from "../lib/activity";
+import { getActivityState, type ActivityState } from "../lib/activity";
 
 export function useActiveActivity(refreshKey?: number) {
-  const [activity, setActivity] = useState<ActiveActivity>();
+  const [activityState, setActivityState] = useState<ActivityState>();
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshActivity = useCallback(async () => {
-    const activeActivity = await getActiveActivity();
+    const state = await getActivityState();
 
-    setActivity(activeActivity);
+    setActivityState(state);
     setIsLoading(false);
   }, []);
 
   useEffect(() => {
     let isMounted = true;
 
-    getActiveActivity().then((activeActivity) => {
+    getActivityState().then((state) => {
       if (isMounted) {
-        setActivity(activeActivity);
+        setActivityState(state);
         setIsLoading(false);
       }
     });
@@ -29,7 +29,7 @@ export function useActiveActivity(refreshKey?: number) {
   }, [refreshKey]);
 
   return {
-    activity,
+    activityState,
     isLoading,
     refreshActivity,
   };

@@ -20,8 +20,14 @@ declare namespace Preferences {
   export type ShowSecondsClock = ExtensionPreferences & {}
   /** Preferences accessible in the `set-timer` command */
   export type SetTimer = ExtensionPreferences & {}
+  /** Preferences accessible in the `manage-timers` command */
+  export type ManageTimers = ExtensionPreferences & {}
+  /** Preferences accessible in the `stop-timer` command */
+  export type StopTimer = ExtensionPreferences & {}
   /** Preferences accessible in the `start-stopwatch` command */
   export type StartStopwatch = ExtensionPreferences & {}
+  /** Preferences accessible in the `stop-stopwatch` command */
+  export type StopStopwatch = ExtensionPreferences & {}
   /** Preferences accessible in the `menu-bar-clock` command */
   export type MenuBarClock = ExtensionPreferences & {}
 }
@@ -31,8 +37,14 @@ declare namespace Arguments {
   export type ShowSecondsClock = {}
   /** Arguments passed to the `set-timer` command */
   export type SetTimer = {}
+  /** Arguments passed to the `manage-timers` command */
+  export type ManageTimers = {}
+  /** Arguments passed to the `stop-timer` command */
+  export type StopTimer = {}
   /** Arguments passed to the `start-stopwatch` command */
   export type StartStopwatch = {}
+  /** Arguments passed to the `stop-stopwatch` command */
+  export type StopStopwatch = {}
   /** Arguments passed to the `menu-bar-clock` command */
   export type MenuBarClock = {}
 }

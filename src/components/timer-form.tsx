@@ -10,18 +10,15 @@ import {
 } from "@raycast/api";
 
 import {
-  createTimerActivity,
-  durationPartsToMs,
-  saveActiveActivity,
+  addTimer,
+  parseDurationInput,
   showActivityInMenuBar,
 } from "../lib/activity";
 
 type TimerFormValues = {
   preset: string;
   name: string;
-  hours: string;
-  minutes: string;
-  seconds: string;
+  customDuration: string;
 };
 
 const CUSTOM_PRESET = "custom";
@@ -39,19 +36,19 @@ export function TimerForm() {
   async function submitTimer(values: TimerFormValues) {
     const durationMs =
       values.preset === CUSTOM_PRESET
-        ? durationPartsToMs(values.hours, values.minutes, values.seconds)
+        ? parseDurationInput(values.customDuration)
         : Number(values.preset);
 
     if (!Number.isFinite(durationMs) || durationMs <= 0) {
       await showToast({
         style: Toast.Style.Failure,
         title: "Enter a valid timer duration",
-        message: "Use whole numbers for hours, minutes, or seconds.",
+        message: "Try 30m, 30m 20s, 1h 5m, or 1:30:00.",
       });
       return false;
     }
 
-    await saveActiveActivity(createTimerActivity(durationMs, values.name));
+    await addTimer(durationMs, values.name);
     await showActivityInMenuBar();
     await showHUD("Timer Started");
     await closeMainWindow({ clearRootSearch: true });
@@ -70,8 +67,12 @@ export function TimerForm() {
         </ActionPanel>
       }
     >
-      <Form.Description text="Start one focused timer and show it in the menu bar." />
-      <Form.TextField id="name" title="Name" placeholder="Optional, e.g. Tea" />
+      <Form.Description text="Start a named timer. Multiple timers can run at the same time." />
+      <Form.TextField
+        id="name"
+        title="Timer Name"
+        placeholder="Optional, e.g. Tea, Laundry, Break"
+      />
       <Form.Dropdown id="preset" title="Duration" defaultValue="1800000">
         {PRESETS.map((preset) => (
           <Form.Dropdown.Item
@@ -88,25 +89,13 @@ export function TimerForm() {
         />
       </Form.Dropdown>
       <Form.Separator />
-      <Form.Description text="Custom duration is used only when Duration is set to Custom." />
       <Form.TextField
-        id="hours"
-        title="Hours"
-        placeholder="0"
-        defaultValue="0"
+        id="customDuration"
+        title="Custom Duration"
+        placeholder="30m 20s, 1h 5m, or 1:30:00"
+        defaultValue="30m"
       />
-      <Form.TextField
-        id="minutes"
-        title="Minutes"
-        placeholder="30"
-        defaultValue="30"
-      />
-      <Form.TextField
-        id="seconds"
-        title="Seconds"
-        placeholder="0"
-        defaultValue="0"
-      />
+      <Form.Description text="Custom Duration is used only when Duration is set to Custom." />
     </Form>
   );
 }

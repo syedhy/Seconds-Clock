@@ -1,120 +1,204 @@
-import { Icon, MenuBarExtra, showHUD } from "@raycast/api";
+import { Icon, MenuBarExtra, Toast, showHUD, showToast } from "@raycast/api";
 import { useEffect } from "react";
 
 import { useActiveActivity } from "./hooks/use-active-activity";
+import { useNow } from "./hooks/use-now";
 import {
-  clearActiveActivity,
   formatActivityDuration,
+  getSelectedTimer,
   getStopwatchElapsedMs,
   getTimerRemainingMs,
+  getTimerTitle,
+  removeCompletedTimers,
+  removeTimer,
+  selectTimer,
+  sortTimersByEnding,
+  stopStopwatch,
   truncateMenuBarName,
-  type ActiveActivity,
+  type ActivityState,
+  type TimerActivity,
 } from "./lib/activity";
-import { useNow } from "./hooks/use-now";
 
 export default function Command() {
   const now = useNow();
-  const { activity, isLoading, refreshActivity } = useActiveActivity(
-    now.getTime(),
-  );
   const nowMs = now.getTime();
-  // Raycast unloads menu-bar commands after rendering; active counters need to
-  // keep executing so the menu-bar title can tick once per second.
-  const shouldKeepRunning =
-    activity?.type === "stopwatch" ||
-    (activity?.type === "timer" && getTimerRemainingMs(activity, nowMs) > 0);
+  const { activityState, isLoading, refreshActivity } =
+    useActiveActivity(nowMs);
+  const selectedTimer = activityState
+    ? getSelectedTimer(activityState)
+    : undefined;
+  const displayedActivity = selectedTimer ?? activityState?.stopwatch;
+  const shouldKeepRunning = Boolean(displayedActivity);
 
   useEffect(() => {
-    if (activity?.type !== "timer") {
-      return;
-    }
+    removeCompletedTimers(nowMs).then((completedTimers) => {
+      if (completedTimers.length === 0) {
+        return;
+      }
 
-    const hasFinished = getTimerRemainingMs(activity, nowMs) === 0;
+      const completedTitle =
+        completedTimers.length === 1
+          ? `${getTimerTitle(completedTimers[0])} Done`
+          : `${completedTimers.length} Timers Done`;
 
-    if (!hasFinished) {
-      return;
-    }
-
-    clearActiveActivity().then(() => {
-      showHUD(`${activity.name ? `${activity.name} ` : ""}Timer Done`);
+      showHUD(completedTitle);
+      showToast({
+        style: Toast.Style.Success,
+        title: completedTitle,
+      });
       refreshActivity();
     });
-  }, [activity, nowMs, refreshActivity]);
+  }, [nowMs, refreshActivity]);
 
-  async function clearActivity() {
-    await clearActiveActivity();
-    await showHUD("Cleared");
-    await refreshActivity();
-  }
-
-  if (!isLoading && !activity) {
+  if (!isLoading && !displayedActivity) {
     return null;
   }
 
-  const title = activity ? getMenuBarTitle(activity, nowMs) : "Seconds Clock";
-
   return (
     <MenuBarExtra
-      title={title}
+      title={
+        selectedTimer
+          ? getTimerMenuBarTitle(selectedTimer, nowMs)
+          : activityState?.stopwatch
+            ? formatActivityDuration(
+                getStopwatchElapsedMs(activityState.stopwatch, nowMs),
+              )
+            : "Seconds Clock"
+      }
       tooltip="Seconds Clock"
       isLoading={isLoading || shouldKeepRunning}
     >
-      {activity ? (
-        <MenuBarExtra.Section title={getSectionTitle(activity)}>
-          <MenuBarExtra.Item
-            title={getActivityTitle(activity)}
-            subtitle={getActivitySubtitle(activity, nowMs)}
-            icon={activity.type === "timer" ? Icon.Clock : Icon.Stopwatch}
-          />
-          <MenuBarExtra.Item
-            title="Clear"
-            icon={Icon.XMarkCircle}
-            onAction={clearActivity}
-          />
-        </MenuBarExtra.Section>
-      ) : (
-        <MenuBarExtra.Item
-          title="No Active Timer or Stopwatch"
-          subtitle="Start one from Show Seconds Clock"
-          icon={Icon.Clock}
+      {activityState ? (
+        <MenuBarContent
+          state={activityState}
+          selectedTimer={selectedTimer}
+          now={nowMs}
+          refreshActivity={refreshActivity}
         />
-      )}
+      ) : null}
     </MenuBarExtra>
   );
 }
 
-function getMenuBarTitle(activity: ActiveActivity, now: number): string {
-  if (activity.type === "stopwatch") {
-    return formatActivityDuration(getStopwatchElapsedMs(activity, now));
-  }
-
-  const remainingTime = formatActivityDuration(
-    getTimerRemainingMs(activity, now),
+function MenuBarContent({
+  state,
+  selectedTimer,
+  now,
+  refreshActivity,
+}: {
+  state: ActivityState;
+  selectedTimer?: TimerActivity;
+  now: number;
+  refreshActivity: () => Promise<void>;
+}) {
+  const otherTimers = sortTimersByEnding(state.timers).filter(
+    (timer) => timer.id !== selectedTimer?.id,
   );
 
-  if (!activity.name) {
+  async function removeTimerAndRefresh(timerId: string) {
+    await removeTimer(timerId);
+    await showHUD("Timer Stopped");
+    await refreshActivity();
+  }
+
+  async function selectTimerAndRefresh(timerId: string) {
+    await selectTimer(timerId);
+    await refreshActivity();
+  }
+
+  async function stopStopwatchAndRefresh() {
+    await stopStopwatch();
+    await showHUD("Stopwatch Stopped");
+    await refreshActivity();
+  }
+
+  return (
+    <>
+      {selectedTimer ? (
+        <MenuBarExtra.Section title="Menu Bar">
+          <TimerMenuItem
+            timer={selectedTimer}
+            now={now}
+            isSelected
+            onSelect={selectTimerAndRefresh}
+            onRemove={removeTimerAndRefresh}
+          />
+        </MenuBarExtra.Section>
+      ) : null}
+
+      {otherTimers.length > 0 ? (
+        <MenuBarExtra.Section title="Timers">
+          {otherTimers.map((timer) => (
+            <TimerMenuItem
+              key={timer.id}
+              timer={timer}
+              now={now}
+              onSelect={selectTimerAndRefresh}
+              onRemove={removeTimerAndRefresh}
+            />
+          ))}
+        </MenuBarExtra.Section>
+      ) : null}
+
+      {state.stopwatch ? (
+        <MenuBarExtra.Section title="Stopwatch">
+          <MenuBarExtra.Item
+            title={`Stopwatch ${formatActivityDuration(getStopwatchElapsedMs(state.stopwatch, now))}`}
+            icon={Icon.Stopwatch}
+          />
+          <MenuBarExtra.Item
+            title="Stop Stopwatch"
+            icon={Icon.XMarkCircle}
+            onAction={stopStopwatchAndRefresh}
+          />
+        </MenuBarExtra.Section>
+      ) : null}
+    </>
+  );
+}
+
+function TimerMenuItem({
+  timer,
+  now,
+  isSelected = false,
+  onSelect,
+  onRemove,
+}: {
+  timer: TimerActivity;
+  now: number;
+  isSelected?: boolean;
+  onSelect: (timerId: string) => Promise<void>;
+  onRemove: (timerId: string) => Promise<void>;
+}) {
+  return (
+    <MenuBarExtra.Submenu
+      title={`${getTimerTitle(timer)} ${formatActivityDuration(getTimerRemainingMs(timer, now))}${isSelected ? " (Shown)" : ""}`}
+      icon={Icon.Clock}
+    >
+      {isSelected ? (
+        <MenuBarExtra.Item title="Shown in Menu Bar" icon={Icon.CheckCircle} />
+      ) : (
+        <MenuBarExtra.Item
+          title="Show in Menu Bar"
+          icon={Icon.CheckCircle}
+          onAction={() => onSelect(timer.id)}
+        />
+      )}
+      <MenuBarExtra.Item
+        title="Stop Timer"
+        icon={Icon.XMarkCircle}
+        onAction={() => onRemove(timer.id)}
+      />
+    </MenuBarExtra.Submenu>
+  );
+}
+
+function getTimerMenuBarTitle(timer: TimerActivity, now: number): string {
+  const remainingTime = formatActivityDuration(getTimerRemainingMs(timer, now));
+
+  if (!timer.name) {
     return remainingTime;
   }
 
-  return `${truncateMenuBarName(activity.name)} ${remainingTime}`;
-}
-
-function getSectionTitle(activity: ActiveActivity): string {
-  return activity.type === "timer" ? "Timer" : "Stopwatch";
-}
-
-function getActivityTitle(activity: ActiveActivity): string {
-  if (activity.type === "stopwatch") {
-    return "Stopwatch";
-  }
-
-  return activity.name || "Timer";
-}
-
-function getActivitySubtitle(activity: ActiveActivity, now: number): string {
-  if (activity.type === "stopwatch") {
-    return formatActivityDuration(getStopwatchElapsedMs(activity, now));
-  }
-
-  return formatActivityDuration(getTimerRemainingMs(activity, now));
+  return `${truncateMenuBarName(timer.name)} ${remainingTime}`;
 }

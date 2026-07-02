@@ -2,7 +2,7 @@
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "seconds-clock",
   "title": "Seconds Clock",
-  "description": "A polished seconds clock with a focused timer and stopwatch for Raycast.",
+  "description": "A polished seconds clock with multiple timers and a stopwatch for Raycast.",
   "icon": "icon.png",
   "author": "hyder",
   "license": "MIT",
@@ -23,9 +23,27 @@
       "mode": "view"
     },
     {
+      "name": "manage-timers",
+      "title": "Manage Timers",
+      "description": "Manage running timers and choose the menu bar timer.",
+      "mode": "view"
+    },
+    {
+      "name": "stop-timer",
+      "title": "Stop Timer",
+      "description": "Stop one running timer.",
+      "mode": "view"
+    },
+    {
       "name": "start-stopwatch",
       "title": "Start Stopwatch",
       "description": "Start a stopwatch in the menu bar.",
+      "mode": "no-view"
+    },
+    {
+      "name": "stop-stopwatch",
+      "title": "Stop Stopwatch",
+      "description": "Stop the running stopwatch.",
       "mode": "no-view"
     },
     {
