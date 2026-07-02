@@ -20,8 +20,8 @@ export function useClockArtwork(
     writeFileSync(imagePath, renderClockSvg({ time, date }), "utf8");
 
     const url = new URL(pathToFileURL(imagePath).href);
-    url.searchParams.set("raycast-width", "1120");
-    url.searchParams.set("raycast-height", "544");
+    url.searchParams.set("raycast-width", "900");
+    url.searchParams.set("raycast-height", "441");
     url.searchParams.set(
       "v",
       `${time.hours}-${time.minutes}-${time.seconds}-${time.meridiem ?? ""}`,
