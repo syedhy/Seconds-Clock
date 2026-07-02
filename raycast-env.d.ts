@@ -18,10 +18,18 @@ declare type Preferences = ExtensionPreferences
 declare namespace Preferences {
   /** Preferences accessible in the `show-seconds-clock` command */
   export type ShowSecondsClock = ExtensionPreferences & {}
+  /** Preferences accessible in the `toggle-menu-bar-clock` command */
+  export type ToggleMenuBarClock = ExtensionPreferences & {}
+  /** Preferences accessible in the `menu-bar-clock` command */
+  export type MenuBarClock = ExtensionPreferences & {}
 }
 
 declare namespace Arguments {
   /** Arguments passed to the `show-seconds-clock` command */
   export type ShowSecondsClock = {}
+  /** Arguments passed to the `toggle-menu-bar-clock` command */
+  export type ToggleMenuBarClock = {}
+  /** Arguments passed to the `menu-bar-clock` command */
+  export type MenuBarClock = {}
 }
 

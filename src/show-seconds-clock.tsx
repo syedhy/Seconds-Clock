@@ -1,23 +1,12 @@
-import { Detail, getPreferenceValues } from "@raycast/api";
-import { useEffect, useState } from "react";
+import { Detail } from "@raycast/api";
 
+import { useNow } from "./hooks/use-now";
+import { getTimeFormatPreference } from "./lib/preferences";
 import { formatClockDate, formatClockDisplay } from "./lib/time";
-import type { TimeFormatPreference } from "./lib/time";
-
-type Preferences = {
-  timeFormat: TimeFormatPreference;
-};
 
 export default function Command() {
-  const { timeFormat } = getPreferenceValues<Preferences>();
-  const [now, setNow] = useState(() => new Date());
-
-  useEffect(() => {
-    const interval = setInterval(() => setNow(new Date()), 1000);
-
-    return () => clearInterval(interval);
-  }, []);
-
+  const timeFormat = getTimeFormatPreference();
+  const now = useNow();
   const time = formatClockDisplay(now, timeFormat);
   const date = formatClockDate(now);
 

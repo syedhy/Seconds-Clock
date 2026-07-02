@@ -13,6 +13,18 @@
       "title": "Show Seconds Clock",
       "description": "Show a live digital clock with seconds.",
       "mode": "view"
+    },
+    {
+      "name": "toggle-menu-bar-clock",
+      "title": "Toggle Menu Bar Clock",
+      "description": "Show or hide the Seconds Clock menu bar item.",
+      "mode": "no-view"
+    },
+    {
+      "name": "menu-bar-clock",
+      "title": "Menu Bar Clock",
+      "description": "Render the live Seconds Clock menu bar item.",
+      "mode": "menu-bar"
     }
   ],
   "preferences": [
@@ -54,4 +66,3 @@
     "typescript": "^5.7.2"
   }
 }
-
