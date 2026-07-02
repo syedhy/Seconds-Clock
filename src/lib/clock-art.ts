@@ -87,7 +87,7 @@ export function renderClockSvg({ time, date }: ClockArtOptions): string {
   </defs>
 
   <rect width="${SVG_WIDTH}" height="${SVG_HEIGHT}" rx="30" fill="url(#sceneGradient)" />
-  <rect x="28" y="34" width="704" height="292" rx="28" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
+  <rect x="28" y="34" width="704" height="306" rx="28" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
 
   ${renderFlapCard(time.hours, hoursX, "HOURS")}
   ${renderColon(firstColonX)}
@@ -96,6 +96,6 @@ export function renderClockSvg({ time, date }: ClockArtOptions): string {
   ${renderFlapCard(time.seconds, secondsX, "SECONDS")}
   ${meridiem}
 
-  <text x="380" y="312" text-anchor="middle" fill="#F6F1E8" font-family="SF Pro Text, -apple-system, BlinkMacSystemFont, Inter, Arial, sans-serif" font-size="24" font-weight="800" letter-spacing="5">${safeDate}</text>
+  <text x="380" y="324" text-anchor="middle" fill="#F6F1E8" font-family="SF Pro Text, -apple-system, BlinkMacSystemFont, Inter, Arial, sans-serif" font-size="24" font-weight="800" letter-spacing="5">${safeDate}</text>
 </svg>`;
 }

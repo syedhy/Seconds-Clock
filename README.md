@@ -30,6 +30,8 @@ Starts a stopwatch from zero and shows it in the menu bar.
 
 Shows the active timer or stopwatch in the macOS menu bar.
 
+The menu-bar item is hidden when there is no active timer or stopwatch.
+
 Timer behavior:
 
 - One active timer at a time

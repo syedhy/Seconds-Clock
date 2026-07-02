@@ -7,7 +7,6 @@ import {
   formatActivityDuration,
   getStopwatchElapsedMs,
   getTimerRemainingMs,
-  saveActiveActivity,
   truncateMenuBarName,
   type ActiveActivity,
 } from "./lib/activity";
@@ -32,16 +31,11 @@ export default function Command() {
 
     const hasFinished = getTimerRemainingMs(activity, nowMs) === 0;
 
-    if (!hasFinished || activity.notifiedAt) {
+    if (!hasFinished) {
       return;
     }
 
-    const completedActivity = {
-      ...activity,
-      notifiedAt: nowMs,
-    };
-
-    saveActiveActivity(completedActivity).then(() => {
+    clearActiveActivity().then(() => {
       showHUD(`${activity.name ? `${activity.name} ` : ""}Timer Done`);
       refreshActivity();
     });
@@ -51,6 +45,10 @@ export default function Command() {
     await clearActiveActivity();
     await showHUD("Cleared");
     await refreshActivity();
+  }
+
+  if (!isLoading && !activity) {
+    return null;
   }
 
   const title = activity ? getMenuBarTitle(activity, nowMs) : "Seconds Clock";

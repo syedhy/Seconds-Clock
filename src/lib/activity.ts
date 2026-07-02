@@ -1,4 +1,4 @@
-import { LocalStorage } from "@raycast/api";
+import { LaunchType, LocalStorage, launchCommand } from "@raycast/api";
 
 const ACTIVE_ACTIVITY_KEY = "activeActivity";
 const SECOND_MS = 1000;
@@ -11,7 +11,6 @@ export type TimerActivity = {
   durationMs: number;
   startedAt: number;
   endsAt: number;
-  notifiedAt?: number;
 };
 
 export type StopwatchActivity = {
@@ -41,6 +40,17 @@ export async function saveActiveActivity(
   activity: ActiveActivity,
 ): Promise<void> {
   await LocalStorage.setItem(ACTIVE_ACTIVITY_KEY, JSON.stringify(activity));
+}
+
+export async function showActivityInMenuBar(): Promise<void> {
+  try {
+    await launchCommand({
+      name: "menu-bar-clock",
+      type: LaunchType.Background,
+    });
+  } catch {
+    // The user may have disabled the menu-bar command in Raycast settings.
+  }
 }
 
 export async function clearActiveActivity(): Promise<void> {
