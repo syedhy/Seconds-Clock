@@ -4,9 +4,18 @@ export function useNow(intervalMs = 1000): Date {
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
-    const interval = setInterval(() => setNow(new Date()), intervalMs);
+    let timeout: NodeJS.Timeout;
 
-    return () => clearInterval(interval);
+    function tick() {
+      setNow(new Date());
+      timeout = setTimeout(tick, intervalMs - (Date.now() % intervalMs));
+    }
+
+    timeout = setTimeout(tick, intervalMs - (Date.now() % intervalMs));
+
+    return () => {
+      clearTimeout(timeout);
+    };
   }, [intervalMs]);
 
   return now;

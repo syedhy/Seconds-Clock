@@ -1,23 +1,24 @@
 import { LaunchType, MenuBarExtra, launchCommand } from "@raycast/api";
 
-import { useMenuBarClockEnabled } from "./hooks/use-menu-bar-clock-enabled";
+import { useMenuBarClockVisibility } from "./hooks/use-menu-bar-clock-visibility";
 import { useNow } from "./hooks/use-now";
 import { getTimeFormatPreference } from "./lib/preferences";
 import { formatMenuBarTime } from "./lib/time";
 
 export default function Command() {
-  const isEnabled = useMenuBarClockEnabled();
+  const { isVisible, hide } = useMenuBarClockVisibility();
   const now = useNow();
 
-  if (!isEnabled) {
+  if (isVisible === false) {
     return null;
   }
 
+  const title = formatMenuBarTime(now, getTimeFormatPreference());
+
   return (
-    <MenuBarExtra
-      title={formatMenuBarTime(now, getTimeFormatPreference())}
-      tooltip="Seconds Clock"
-    >
+    // MenuBarExtra.isLoading tells Raycast not to unload the command. Without it,
+    // root-launched menu-bar commands render once and the one-second timer stops.
+    <MenuBarExtra title={title} tooltip="Seconds Clock" isLoading>
       <MenuBarExtra.Item
         title="Show Seconds Clock"
         onAction={() =>
@@ -27,6 +28,7 @@ export default function Command() {
           })
         }
       />
+      <MenuBarExtra.Item title="Hide Menu Bar Clock" onAction={hide} />
     </MenuBarExtra>
   );
 }

@@ -15,14 +15,8 @@
       "mode": "view"
     },
     {
-      "name": "toggle-menu-bar-clock",
-      "title": "Toggle Menu Bar Clock",
-      "description": "Show or hide the Seconds Clock menu bar item.",
-      "mode": "no-view"
-    },
-    {
       "name": "menu-bar-clock",
-      "title": "Menu Bar Clock",
+      "title": "Seconds Clock Menu Bar",
       "description": "Render the live Seconds Clock menu bar item.",
       "mode": "menu-bar"
     }
