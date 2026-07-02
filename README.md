@@ -22,6 +22,10 @@ Seconds Clock has one preference:
 
 The default is `12-hour`.
 
+## Menu Bar Cleanup
+
+macOS already supports showing seconds in the system menu bar. Seconds Clock keeps a minimal menu bar cleanup command only so older enabled development builds can remove their stale menu bar item.
+
 ## Development
 
 ```bash

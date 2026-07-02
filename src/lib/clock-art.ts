@@ -5,15 +5,15 @@ type ClockArtOptions = {
   date: string;
 };
 
-const SVG_WIDTH = 980;
-const SVG_HEIGHT = 480;
-const CARD_WIDTH = 180;
-const CARD_HEIGHT = 160;
-const CARD_Y = 132;
-const CARD_GAP = 36;
-const COLON_WIDTH = 28;
-const MERIDIEM_WIDTH = 80;
-const MERIDIEM_GAP = 24;
+const SVG_WIDTH = 760;
+const SVG_HEIGHT = 360;
+const CARD_WIDTH = 132;
+const CARD_HEIGHT = 118;
+const CARD_Y = 92;
+const CARD_GAP = 24;
+const COLON_WIDTH = 20;
+const MERIDIEM_WIDTH = 58;
+const MERIDIEM_GAP = 18;
 
 const escapeSvgText = (value: string) =>
   value
@@ -27,21 +27,21 @@ function renderFlapCard(value: string, x: number, label: string): string {
 
   return `
     <g transform="translate(${x} ${CARD_Y})">
-      <rect x="0" y="0" width="${CARD_WIDTH}" height="${CARD_HEIGHT}" rx="28" fill="url(#cardGradient)" filter="url(#cardShadow)" />
-      <rect x="10" y="10" width="160" height="140" rx="22" fill="none" stroke="rgba(255,255,255,0.08)" />
-      <path d="M0 80H${CARD_WIDTH}" stroke="rgba(0,0,0,0.58)" stroke-width="4" />
-      <path d="M18 83H162" stroke="rgba(255,255,255,0.06)" stroke-width="2" />
-      <text x="58" y="109" text-anchor="middle" fill="#F6F1E8" font-family="SF Mono, Menlo, Monaco, ui-monospace, monospace" font-size="82" font-weight="800">${firstDigit}</text>
-      <text x="122" y="109" text-anchor="middle" fill="#F6F1E8" font-family="SF Mono, Menlo, Monaco, ui-monospace, monospace" font-size="82" font-weight="800">${secondDigit}</text>
-      <text x="90" y="210" text-anchor="middle" fill="#9B9CA0" font-family="SF Pro Text, -apple-system, BlinkMacSystemFont, Inter, Arial, sans-serif" font-size="20" font-weight="800" letter-spacing="5">${label}</text>
+      <rect x="0" y="0" width="${CARD_WIDTH}" height="${CARD_HEIGHT}" rx="22" fill="url(#cardGradient)" filter="url(#cardShadow)" />
+      <rect x="8" y="8" width="116" height="102" rx="17" fill="none" stroke="rgba(255,255,255,0.08)" />
+      <path d="M0 59H${CARD_WIDTH}" stroke="rgba(0,0,0,0.58)" stroke-width="3" />
+      <path d="M14 61H118" stroke="rgba(255,255,255,0.06)" stroke-width="1.5" />
+      <text x="43" y="81" text-anchor="middle" fill="#F6F1E8" font-family="SF Mono, Menlo, Monaco, ui-monospace, monospace" font-size="60" font-weight="800">${firstDigit}</text>
+      <text x="89" y="81" text-anchor="middle" fill="#F6F1E8" font-family="SF Mono, Menlo, Monaco, ui-monospace, monospace" font-size="60" font-weight="800">${secondDigit}</text>
+      <text x="66" y="158" text-anchor="middle" fill="#9B9CA0" font-family="SF Pro Text, -apple-system, BlinkMacSystemFont, Inter, Arial, sans-serif" font-size="15" font-weight="800" letter-spacing="4">${label}</text>
     </g>`;
 }
 
 function renderColon(x: number): string {
   return `
-    <g transform="translate(${x} 195)">
-      <circle cx="14" cy="0" r="11" fill="#F6F1E8" opacity="0.96" />
-      <circle cx="14" cy="62" r="11" fill="#F6F1E8" opacity="0.96" />
+    <g transform="translate(${x} 140)">
+      <circle cx="10" cy="0" r="8" fill="#F6F1E8" opacity="0.96" />
+      <circle cx="10" cy="47" r="8" fill="#F6F1E8" opacity="0.96" />
     </g>`;
 }
 
@@ -62,9 +62,9 @@ export function renderClockSvg({ time, date }: ClockArtOptions): string {
   const meridiemX = secondsX + CARD_WIDTH + MERIDIEM_GAP;
   const meridiem = safeMeridiem
     ? `
-      <g transform="translate(${meridiemX} 164)">
-        <rect x="0" y="0" width="${MERIDIEM_WIDTH}" height="52" rx="16" fill="#F6F1E8" opacity="0.96" />
-        <text x="40" y="36" text-anchor="middle" fill="#18191C" font-family="SF Pro Display, -apple-system, BlinkMacSystemFont, Inter, Arial, sans-serif" font-size="30" font-weight="850" letter-spacing="1.5">${safeMeridiem}</text>
+      <g transform="translate(${meridiemX} 117)">
+        <rect x="0" y="0" width="${MERIDIEM_WIDTH}" height="38" rx="12" fill="#F6F1E8" opacity="0.96" />
+        <text x="29" y="27" text-anchor="middle" fill="#18191C" font-family="SF Pro Display, -apple-system, BlinkMacSystemFont, Inter, Arial, sans-serif" font-size="22" font-weight="850" letter-spacing="1">${safeMeridiem}</text>
       </g>`
     : "";
 
@@ -81,13 +81,13 @@ export function renderClockSvg({ time, date }: ClockArtOptions): string {
       <stop offset="1" stop-color="#202125" />
     </linearGradient>
     <filter id="cardShadow" x="-15%" y="-15%" width="130%" height="150%" color-interpolation-filters="sRGB">
-      <feDropShadow dx="0" dy="18" stdDeviation="20" flood-color="#000000" flood-opacity="0.34" />
+      <feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000000" flood-opacity="0.34" />
       <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#FFFFFF" flood-opacity="0.06" />
     </filter>
   </defs>
 
-  <rect width="${SVG_WIDTH}" height="${SVG_HEIGHT}" rx="36" fill="url(#sceneGradient)" />
-  <rect x="32" y="42" width="916" height="384" rx="34" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
+  <rect width="${SVG_WIDTH}" height="${SVG_HEIGHT}" rx="30" fill="url(#sceneGradient)" />
+  <rect x="28" y="34" width="704" height="292" rx="28" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.06)" />
 
   ${renderFlapCard(time.hours, hoursX, "HOURS")}
   ${renderColon(firstColonX)}
@@ -96,6 +96,6 @@ export function renderClockSvg({ time, date }: ClockArtOptions): string {
   ${renderFlapCard(time.seconds, secondsX, "SECONDS")}
   ${meridiem}
 
-  <text x="490" y="390" text-anchor="middle" fill="#F6F1E8" font-family="SF Pro Text, -apple-system, BlinkMacSystemFont, Inter, Arial, sans-serif" font-size="32" font-weight="800" letter-spacing="7">${safeDate}</text>
+  <text x="380" y="288" text-anchor="middle" fill="#F6F1E8" font-family="SF Pro Text, -apple-system, BlinkMacSystemFont, Inter, Arial, sans-serif" font-size="24" font-weight="800" letter-spacing="5">${safeDate}</text>
 </svg>`;
 }

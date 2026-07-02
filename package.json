@@ -15,6 +15,13 @@
       "title": "Show Seconds Clock",
       "description": "Show a live digital clock with seconds.",
       "mode": "view"
+    },
+    {
+      "name": "menu-bar-clock",
+      "title": "Seconds Clock Menu Bar",
+      "description": "Hide a previously enabled Seconds Clock menu bar item.",
+      "mode": "menu-bar",
+      "disabledByDefault": true
     }
   ],
   "preferences": [
