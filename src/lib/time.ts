@@ -40,13 +40,3 @@ export function formatClockDate(date: Date): string {
     .map((part) => padTimePart(part))
     .join(" - ");
 }
-
-export function formatMenuBarTime(
-  date: Date,
-  timeFormat: TimeFormatPreference,
-): string {
-  const time = formatClockTime(date, timeFormat);
-  const meridiem = time.meridiem ? ` ${time.meridiem}` : "";
-
-  return `${time.hours}:${time.minutes}:${time.seconds}${meridiem}`;
-}

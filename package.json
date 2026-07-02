@@ -8,19 +8,13 @@
   "license": "MIT",
   "platforms": ["macOS"],
   "categories": ["Productivity"],
-  "keywords": ["clock", "seconds", "time", "menu bar"],
+  "keywords": ["clock", "seconds", "time", "digital"],
   "commands": [
     {
       "name": "show-seconds-clock",
       "title": "Show Seconds Clock",
       "description": "Show a live digital clock with seconds.",
       "mode": "view"
-    },
-    {
-      "name": "menu-bar-clock",
-      "title": "Seconds Clock Menu Bar",
-      "description": "Show the live Seconds Clock menu bar item.",
-      "mode": "menu-bar"
     }
   ],
   "preferences": [

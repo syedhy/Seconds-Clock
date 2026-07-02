@@ -1,18 +1,9 @@
-import type { FormattedClockTime } from "./time";
-
-export function renderClockMarkdown(
-  time: FormattedClockTime,
-  date: string,
-): string {
-  const meridiem = time.meridiem ? ` ${time.meridiem}` : "";
-
+export function renderClockMarkdown(clockImageUrl: string): string {
   return `<div align="center">
 
-<br />
+<br /><br />
 
-# \`${time.hours}\` : \`${time.minutes}\` : \`${time.seconds}\`${meridiem}
-
-#### ${date}
+![Seconds Clock](${clockImageUrl})
 
 </div>`;
 }
