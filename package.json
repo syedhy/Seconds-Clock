@@ -2,13 +2,13 @@
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "seconds-clock",
   "title": "Seconds Clock",
-  "description": "A minimal digital clock with always-visible seconds for Raycast.",
+  "description": "A polished seconds clock with a focused timer and stopwatch for Raycast.",
   "icon": "icon.png",
   "author": "hyder",
   "license": "MIT",
   "platforms": ["macOS"],
   "categories": ["Productivity"],
-  "keywords": ["clock", "seconds", "time", "digital"],
+  "keywords": ["clock", "seconds", "time", "digital", "timer", "stopwatch"],
   "commands": [
     {
       "name": "show-seconds-clock",
@@ -19,9 +19,9 @@
     {
       "name": "menu-bar-clock",
       "title": "Seconds Clock Menu Bar",
-      "description": "Hide a previously enabled Seconds Clock menu bar item.",
+      "description": "Show the active timer or stopwatch in the menu bar.",
       "mode": "menu-bar",
-      "disabledByDefault": true
+      "interval": "1m"
     }
   ],
   "preferences": [

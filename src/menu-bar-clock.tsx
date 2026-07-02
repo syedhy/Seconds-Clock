@@ -1,52 +1,122 @@
-import { MenuBarExtra, showHUD } from "@raycast/api";
-import { useEffect, useState } from "react";
+import { Icon, MenuBarExtra, showHUD } from "@raycast/api";
+import { useEffect } from "react";
 
+import { useActiveActivity } from "./hooks/use-active-activity";
 import {
-  isMenuBarClockEnabled,
-  setMenuBarClockEnabled,
-} from "./lib/menu-bar-clock-state";
+  clearActiveActivity,
+  formatActivityDuration,
+  getStopwatchElapsedMs,
+  getTimerRemainingMs,
+  saveActiveActivity,
+  truncateMenuBarName,
+  type ActiveActivity,
+} from "./lib/activity";
+import { useNow } from "./hooks/use-now";
 
 export default function Command() {
-  const [isEnabled, setIsEnabled] = useState<boolean>();
+  const now = useNow();
+  const { activity, isLoading, refreshActivity } = useActiveActivity(
+    now.getTime(),
+  );
+  const nowMs = now.getTime();
+  // Raycast unloads menu-bar commands after rendering; active counters need to
+  // keep executing so the menu-bar title can tick once per second.
+  const shouldKeepRunning =
+    activity?.type === "stopwatch" ||
+    (activity?.type === "timer" && getTimerRemainingMs(activity, nowMs) > 0);
 
   useEffect(() => {
-    let isMounted = true;
+    if (activity?.type !== "timer") {
+      return;
+    }
 
-    isMenuBarClockEnabled().then((enabled) => {
-      if (isMounted) {
-        setIsEnabled(enabled);
-      }
-    });
+    const hasFinished = getTimerRemainingMs(activity, nowMs) === 0;
 
-    return () => {
-      isMounted = false;
+    if (!hasFinished || activity.notifiedAt) {
+      return;
+    }
+
+    const completedActivity = {
+      ...activity,
+      notifiedAt: nowMs,
     };
-  }, []);
 
-  async function hideMenuBarClock() {
-    await setMenuBarClockEnabled(false);
-    await showHUD("Seconds Clock Menu Bar Hidden");
-    setIsEnabled(false);
+    saveActiveActivity(completedActivity).then(() => {
+      showHUD(`${activity.name ? `${activity.name} ` : ""}Timer Done`);
+      refreshActivity();
+    });
+  }, [activity, nowMs, refreshActivity]);
+
+  async function clearActivity() {
+    await clearActiveActivity();
+    await showHUD("Cleared");
+    await refreshActivity();
   }
 
-  if (isEnabled === undefined) {
-    return (
-      <MenuBarExtra title="Seconds Clock" tooltip="Seconds Clock" isLoading />
-    );
-  }
-
-  // Raycast removes a menu-bar command's item when the command returns null.
-  // See: https://developers.raycast.com/api-reference/menu-bar-commands
-  if (!isEnabled) {
-    return null;
-  }
+  const title = activity ? getMenuBarTitle(activity, nowMs) : "Seconds Clock";
 
   return (
-    <MenuBarExtra title="Seconds Clock" tooltip="Seconds Clock">
-      <MenuBarExtra.Item
-        title="Hide Menu Bar Clock"
-        onAction={hideMenuBarClock}
-      />
+    <MenuBarExtra
+      title={title}
+      tooltip="Seconds Clock"
+      isLoading={isLoading || shouldKeepRunning}
+    >
+      {activity ? (
+        <MenuBarExtra.Section title={getSectionTitle(activity)}>
+          <MenuBarExtra.Item
+            title={getActivityTitle(activity)}
+            subtitle={getActivitySubtitle(activity, nowMs)}
+            icon={activity.type === "timer" ? Icon.Clock : Icon.Stopwatch}
+          />
+          <MenuBarExtra.Item
+            title="Clear"
+            icon={Icon.XMarkCircle}
+            onAction={clearActivity}
+          />
+        </MenuBarExtra.Section>
+      ) : (
+        <MenuBarExtra.Item
+          title="No Active Timer or Stopwatch"
+          subtitle="Start one from Show Seconds Clock"
+          icon={Icon.Clock}
+        />
+      )}
     </MenuBarExtra>
   );
+}
+
+function getMenuBarTitle(activity: ActiveActivity, now: number): string {
+  if (activity.type === "stopwatch") {
+    return formatActivityDuration(getStopwatchElapsedMs(activity, now));
+  }
+
+  const remainingTime = formatActivityDuration(
+    getTimerRemainingMs(activity, now),
+  );
+
+  if (!activity.name) {
+    return remainingTime;
+  }
+
+  return `${truncateMenuBarName(activity.name)} ${remainingTime}`;
+}
+
+function getSectionTitle(activity: ActiveActivity): string {
+  return activity.type === "timer" ? "Timer" : "Stopwatch";
+}
+
+function getActivityTitle(activity: ActiveActivity): string {
+  if (activity.type === "stopwatch") {
+    return "Stopwatch";
+  }
+
+  return activity.name || "Timer";
+}
+
+function getActivitySubtitle(activity: ActiveActivity, now: number): string {
+  if (activity.type === "stopwatch") {
+    return formatActivityDuration(getStopwatchElapsedMs(activity, now));
+  }
+
+  return formatActivityDuration(getTimerRemainingMs(activity, now));
 }
