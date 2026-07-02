@@ -1,0 +1,57 @@
+{
+  "$schema": "https://www.raycast.com/schemas/extension.json",
+  "name": "seconds-clock",
+  "title": "Seconds Clock",
+  "description": "A minimal digital clock with always-visible seconds for Raycast.",
+  "icon": "icon.png",
+  "author": "hyder",
+  "license": "MIT",
+  "categories": ["Productivity"],
+  "commands": [
+    {
+      "name": "show-seconds-clock",
+      "title": "Show Seconds Clock",
+      "description": "Show a live digital clock with seconds.",
+      "mode": "view"
+    }
+  ],
+  "preferences": [
+    {
+      "name": "timeFormat",
+      "title": "Time Format",
+      "description": "Choose whether the clock uses a 12-hour or 24-hour format.",
+      "type": "dropdown",
+      "required": true,
+      "default": "12-hour",
+      "data": [
+        {
+          "title": "12-hour",
+          "value": "12-hour"
+        },
+        {
+          "title": "24-hour",
+          "value": "24-hour"
+        }
+      ]
+    }
+  ],
+  "scripts": {
+    "dev": "ray develop",
+    "build": "ray build -e dist",
+    "lint": "ray lint",
+    "fix-lint": "ray lint --fix",
+    "publish": "ray publish"
+  },
+  "dependencies": {
+    "@raycast/api": "^1.104.20"
+  },
+  "devDependencies": {
+    "@raycast/eslint-config": "^2.2.0",
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.2",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2"
+  }
+}
+
