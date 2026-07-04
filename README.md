@@ -1,8 +1,8 @@
 # Seconds Clock
 
-Seconds Clock is a polished digital clock for Raycast with always-visible seconds, multi-timer support, and a simple stopwatch.
+Seconds Clock is a focused digital clock for Raycast with always-visible seconds, polished multi-timer support, and a simple menu bar stopwatch.
 
-It is designed to stay focused: a large flip-clock-inspired Raycast view, named timers, one stopwatch, and one time-format preference. No alarms, world clocks, clipboard actions, or extra utilities.
+It is designed to stay lightweight: a large flip-clock-inspired Raycast view, named timers, one stopwatch, and one time-format preference. No alarms, world clocks, clipboard actions, or extra utilities.
 
 ## Commands
 

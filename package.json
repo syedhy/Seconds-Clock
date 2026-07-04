@@ -2,7 +2,7 @@
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "seconds-clock",
   "title": "Seconds Clock",
-  "description": "A polished seconds clock with multiple timers and a stopwatch for Raycast.",
+  "description": "A focused seconds clock with polished timers and a menu bar stopwatch.",
   "icon": "icon.png",
   "author": "hyder",
   "license": "MIT",
@@ -24,31 +24,31 @@
     {
       "name": "show-seconds-clock",
       "title": "Show Seconds Clock",
-      "description": "Show a live digital clock with seconds.",
+      "description": "Open a large flip-clock-style view with live seconds.",
       "mode": "view"
     },
     {
       "name": "set-timer",
       "title": "Set Timer",
-      "description": "Set a named countdown timer for the menu bar.",
+      "description": "Create a named countdown timer from natural duration text.",
       "mode": "view"
     },
     {
       "name": "manage-timers",
       "title": "Manage Timers",
-      "description": "Manage running timers and choose the menu bar timer.",
+      "description": "View, rename, favorite, stop, and choose active timers.",
       "mode": "view"
     },
     {
       "name": "stop-timer",
       "title": "Stop Timer",
-      "description": "Stop one running timer.",
+      "description": "Stop a running timer quickly.",
       "mode": "view"
     },
     {
       "name": "start-stopwatch",
       "title": "Start Stopwatch",
-      "description": "Start a stopwatch in the menu bar.",
+      "description": "Start a stopwatch that appears in the menu bar.",
       "mode": "no-view"
     },
     {
@@ -60,7 +60,7 @@
     {
       "name": "menu-bar-clock",
       "title": "Seconds Clock Menu Bar",
-      "description": "Show the active timer or stopwatch in the menu bar.",
+      "description": "Show active timers and stopwatch controls in the menu bar.",
       "mode": "menu-bar",
       "interval": "1m"
     }
