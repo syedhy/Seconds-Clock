@@ -4,7 +4,7 @@
   "title": "Seconds Clock",
   "description": "A focused seconds clock with polished timers and a menu bar stopwatch.",
   "icon": "icon.png",
-  "author": "hyder",
+  "author": "syed_hyder",
   "license": "MIT",
   "platforms": [
     "macOS"

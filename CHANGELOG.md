@@ -1,6 +1,6 @@
 # Seconds Clock Changelog
 
-## Initial Release - {PR_MERGE_DATE}
+## [Initial Release] - {PR_MERGE_DATE}
 
 - Added a large flip-clock-inspired seconds clock.
 - Added 12-hour and 24-hour time format support.
