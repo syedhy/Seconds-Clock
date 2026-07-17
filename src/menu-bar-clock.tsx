@@ -13,6 +13,7 @@ import {
   removeCompletedTimers,
   removeTimer,
   selectTimer,
+  showActivityInMenuBar,
   sortTimersByEnding,
   stopStopwatch,
   truncateMenuBarName,
@@ -138,6 +139,7 @@ function MenuBarContent({
     return runMenuAction(async () => {
       const nextState = await removeTimer(timerId);
       await refreshActivity(nextState);
+      void showActivityInMenuBar();
       void showHUD("Timer Stopped").catch(() => undefined);
     });
   }
@@ -149,6 +151,7 @@ function MenuBarContent({
     return runMenuAction(async () => {
       const nextState = await extendTimer(timerId, minutes * 60 * 1000);
       await refreshActivity(nextState);
+      void showActivityInMenuBar();
       void showHUD(`Added ${minutes} Minutes`).catch(() => undefined);
     });
   }
@@ -157,6 +160,7 @@ function MenuBarContent({
     return runMenuAction(async () => {
       const nextState = await selectTimer(timerId);
       await refreshActivity(nextState);
+      void showActivityInMenuBar();
     });
   }
 
@@ -164,6 +168,7 @@ function MenuBarContent({
     return runMenuAction(async () => {
       const nextState = await stopStopwatch();
       await refreshActivity(nextState);
+      void showActivityInMenuBar();
       void showHUD("Stopwatch Stopped").catch(() => undefined);
     });
   }
@@ -173,8 +178,10 @@ function MenuBarContent({
       {selectedTimer ? (
         <MenuBarExtra.Section title="Menu Bar">
           <TimerMenuItem
+            key={selectedTimer.id}
             timer={selectedTimer}
             actionLabel={timerLabels.get(selectedTimer.id) ?? "Timer"}
+            now={now}
             isSelected
             onSelect={selectTimerAndRefresh}
             onRemove={removeTimerAndRefresh}
@@ -190,6 +197,7 @@ function MenuBarContent({
               key={timer.id}
               timer={timer}
               actionLabel={timerLabels.get(timer.id) ?? "Timer"}
+              now={now}
               onSelect={selectTimerAndRefresh}
               onRemove={removeTimerAndRefresh}
               onExtend={extendTimerAndRefresh}
@@ -221,6 +229,7 @@ function MenuBarContent({
 function TimerMenuItem({
   timer,
   actionLabel,
+  now,
   isSelected = false,
   onSelect,
   onRemove,
@@ -228,6 +237,7 @@ function TimerMenuItem({
 }: {
   timer: TimerActivity;
   actionLabel: string;
+  now: number;
   isSelected?: boolean;
   onSelect: (timerId: string) => Promise<void>;
   onRemove: (timerId: string) => Promise<void>;
@@ -235,7 +245,7 @@ function TimerMenuItem({
 }) {
   return (
     <MenuBarExtra.Submenu
-      title={`${actionLabel}${isSelected ? " (Shown)" : ""}`}
+      title={`${getTimerMenuBarTitle(timer, now)}${isSelected ? " (Shown)" : ""}`}
       icon={Icon.Clock}
     >
       {isSelected ? (
