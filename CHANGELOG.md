@@ -1,5 +1,12 @@
 # Seconds Clock Changelog
 
+## [Reliability Improvements] - {PR_MERGE_DATE}
+
+- Updated the Raycast API dependency.
+- Reduced unnecessary LocalStorage polling in activity views.
+- Hardened timer, stopwatch, favorite, and legacy state parsing.
+- Corrected menu-bar loading lifecycle and duplicate completion checks.
+
 ## [Initial Release] - {PR_MERGE_DATE}
 
 - Added a large flip-clock-inspired seconds clock.

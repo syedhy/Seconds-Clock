@@ -1,32 +1,44 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { getActivityState, type ActivityState } from "../lib/activity";
 
-export function useActiveActivity(refreshKey?: number) {
+export function useActiveActivity() {
   const [activityState, setActivityState] = useState<ActivityState>();
   const [isLoading, setIsLoading] = useState(true);
+  const requestId = useRef(0);
+  const isMounted = useRef(true);
 
   const refreshActivity = useCallback(async () => {
-    const state = await getActivityState();
+    const currentRequestId = ++requestId.current;
 
-    setActivityState(state);
-    setIsLoading(false);
+    try {
+      const state = await getActivityState();
+
+      if (!isMounted.current || currentRequestId !== requestId.current) {
+        return;
+      }
+
+      setActivityState(state);
+    } catch {
+      if (isMounted.current && currentRequestId === requestId.current) {
+        setActivityState(undefined);
+      }
+    } finally {
+      if (isMounted.current && currentRequestId === requestId.current) {
+        setIsLoading(false);
+      }
+    }
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
+    isMounted.current = true;
 
-    getActivityState().then((state) => {
-      if (isMounted) {
-        setActivityState(state);
-        setIsLoading(false);
-      }
-    });
+    void refreshActivity();
 
     return () => {
-      isMounted = false;
+      isMounted.current = false;
     };
-  }, [refreshKey]);
+  }, [refreshActivity]);
 
   return {
     activityState,

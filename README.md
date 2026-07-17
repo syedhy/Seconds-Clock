@@ -60,10 +60,15 @@ Timer behavior:
 - Menu-bar timer actions include adding 5 or 30 minutes
 - Finished timers show a Raycast completion indication and are removed automatically
 
+Raycast controls menu-bar command lifecycles and background refresh timing. The
+menu-bar title refreshes when the menu is opened and during scheduled refreshes;
+macOS does not guarantee an exact per-second background update.
+
 Stopwatch behavior:
 
 - Counts up from zero
 - Shows seconds in the menu bar
+- Updates live while the stopwatch is running
 - Can be cleared from the menu-bar dropdown
 
 ## Preference

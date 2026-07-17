@@ -93,7 +93,7 @@
     "publish": "ray publish"
   },
   "dependencies": {
-    "@raycast/api": "^1.104.21"
+    "@raycast/api": "^1.104.23"
   },
   "devDependencies": {
     "@raycast/eslint-config": "^2.2.0",

@@ -13,10 +13,5 @@ export default function Command() {
   const date = formatClockDate(now);
   const clockImageUrl = useClockArtwork(time, date);
 
-  return (
-    <Detail
-      navigationTitle="Seconds Clock"
-      markdown={renderClockMarkdown(clockImageUrl)}
-    />
-  );
+  return <Detail markdown={renderClockMarkdown(clockImageUrl)} />;
 }

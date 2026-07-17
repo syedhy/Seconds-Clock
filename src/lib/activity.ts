@@ -6,6 +6,10 @@ const LEGACY_ACTIVE_ACTIVITY_KEY = "activeActivity";
 const SECOND_MS = 1000;
 const MINUTE_MS = 60 * SECOND_MS;
 const HOUR_MS = 60 * MINUTE_MS;
+const DURATION_TOKEN_PATTERN =
+  /(\d+)\s*(hours?|hrs?|hr|h|minutes?|mins?|min|m|seconds?|secs?|sec|s)/gi;
+const MALFORMED_DURATION_PATTERN =
+  /(?:^|\s)[+-]?\d+\.\d+\s*(?:hours?|hrs?|hr|h|minutes?|mins?|min|m|seconds?|secs?|sec|s)\b|(?:^|\s)[+-]\s*\d+\s*(?:hours?|hrs?|hr|h|minutes?|mins?|min|m|seconds?|secs?|sec|s)\b/i;
 
 export type TimerActivity = {
   id: string;
@@ -49,7 +53,9 @@ export async function getActivityState(): Promise<ActivityState> {
 
   if (storedState) {
     try {
-      return normalizeActivityState(JSON.parse(storedState) as ActivityState);
+      return normalizeActivityState(
+        JSON.parse(storedState) as Partial<ActivityState>,
+      );
     } catch {
       await LocalStorage.removeItem(ACTIVITY_STATE_KEY);
     }
@@ -241,7 +247,22 @@ export async function getFavoriteTimers(): Promise<FavoriteTimer[]> {
   }
 
   try {
-    return JSON.parse(storedFavorites) as FavoriteTimer[];
+    const parsedFavorites = JSON.parse(storedFavorites) as unknown;
+
+    if (!Array.isArray(parsedFavorites)) {
+      throw new Error("Invalid favorites");
+    }
+
+    const favorites = parsedFavorites.filter(isValidFavoriteTimer);
+
+    if (favorites.length !== parsedFavorites.length) {
+      await LocalStorage.setItem(
+        FAVORITE_TIMERS_KEY,
+        JSON.stringify(favorites),
+      );
+    }
+
+    return favorites;
   } catch {
     await LocalStorage.removeItem(FAVORITE_TIMERS_KEY);
     return [];
@@ -354,22 +375,6 @@ export function formatActivityDuration(durationMs: number): string {
     .join(":");
 }
 
-export function durationPartsToMs(
-  hours: string,
-  minutes: string,
-  seconds: string,
-): number {
-  const parsedHours = parsePositiveInteger(hours);
-  const parsedMinutes = parsePositiveInteger(minutes);
-  const parsedSeconds = parsePositiveInteger(seconds);
-
-  return (
-    parsedHours * HOUR_MS +
-    parsedMinutes * MINUTE_MS +
-    parsedSeconds * SECOND_MS
-  );
-}
-
 export function parseDurationInput(value: string): number {
   const normalizedValue = value.trim().toLowerCase();
 
@@ -381,18 +386,11 @@ export function parseDurationInput(value: string): number {
     return parseColonDuration(normalizedValue);
   }
 
-  const matches = [
-    ...normalizedValue.matchAll(
-      /(\d+)\s*(hours?|hrs?|hr|h|minutes?|mins?|min|m|seconds?|secs?|sec|s)/g,
-    ),
-  ];
+  const matches = [...normalizedValue.matchAll(DURATION_TOKEN_PATTERN)];
 
   if (matches.length > 0) {
     const remainingInput = normalizedValue
-      .replace(
-        /(\d+)\s*(hours?|hrs?|hr|h|minutes?|mins?|min|m|seconds?|secs?|sec|s)/g,
-        "",
-      )
+      .replace(DURATION_TOKEN_PATTERN, "")
       .replace(/\band\b/g, "")
       .trim();
 
@@ -432,6 +430,10 @@ export function parseTimerInput(value: string): ParsedTimerInput | undefined {
     return undefined;
   }
 
+  if (MALFORMED_DURATION_PATTERN.test(normalizedValue)) {
+    return undefined;
+  }
+
   const durationMs = parseDurationInput(normalizedValue);
 
   if (Number.isFinite(durationMs) && durationMs > 0) {
@@ -440,11 +442,7 @@ export function parseTimerInput(value: string): ParsedTimerInput | undefined {
     };
   }
 
-  const durationMatches = [
-    ...normalizedValue.matchAll(
-      /(\d+)\s*(hours?|hrs?|hr|h|minutes?|mins?|min|m|seconds?|secs?|sec|s)/gi,
-    ),
-  ];
+  const durationMatches = [...normalizedValue.matchAll(DURATION_TOKEN_PATTERN)];
 
   if (durationMatches.length === 0) {
     return undefined;
@@ -458,10 +456,7 @@ export function parseTimerInput(value: string): ParsedTimerInput | undefined {
   }
 
   const name = normalizedValue
-    .replace(
-      /(\d+)\s*(hours?|hrs?|hr|h|minutes?|mins?|min|m|seconds?|secs?|sec|s)/gi,
-      "",
-    )
+    .replace(DURATION_TOKEN_PATTERN, "")
     .replace(/\band\b/gi, "")
     .trim();
 
@@ -499,18 +494,26 @@ export function truncateMenuBarName(name: string): string {
   return `${trimmedName.slice(0, 17)}...`;
 }
 
-function normalizeActivityState(state: ActivityState): ActivityState {
-  const timers = sortTimersByEnding(state.timers ?? []);
+function normalizeActivityState(
+  state: Partial<ActivityState> | null | undefined,
+): ActivityState {
+  const timers = sortTimersByEnding(
+    (Array.isArray(state?.timers) ? state.timers : []).filter(
+      isValidTimerActivity,
+    ),
+  );
   const hasSelectedTimer = timers.some(
-    (timer) => timer.id === state.selectedTimerId,
+    (timer) => timer.id === state?.selectedTimerId,
   );
 
   return {
     timers,
     selectedTimerId: hasSelectedTimer
-      ? state.selectedTimerId
+      ? state?.selectedTimerId
       : getDefaultTimer(timers)?.id,
-    stopwatch: state.stopwatch,
+    stopwatch: isValidStopwatchActivity(state?.stopwatch)
+      ? state.stopwatch
+      : undefined,
   };
 }
 
@@ -524,31 +527,39 @@ async function migrateLegacyActivityState(): Promise<ActivityState> {
   }
 
   try {
-    const activity = JSON.parse(legacyActivity) as LegacyActiveActivity;
-    const state =
-      activity.type === "timer"
-        ? normalizeActivityState({
-            timers: [
-              {
-                id: createActivityId(),
-                name: activity.name,
-                durationMs: activity.durationMs,
-                startedAt: activity.startedAt,
-                endsAt: activity.endsAt,
-              },
-            ],
-          })
-        : normalizeActivityState({
-            timers: [],
-            stopwatch: {
-              startedAt: activity.startedAt,
-            },
-          });
+    const activity = JSON.parse(legacyActivity) as unknown;
+    let state: ActivityState;
 
-    await saveActivityState(state);
-    await LocalStorage.removeItem(LEGACY_ACTIVE_ACTIVITY_KEY);
+    if (isValidLegacyTimer(activity)) {
+      state = normalizeActivityState({
+        timers: [
+          {
+            id: createActivityId(),
+            name: activity.name,
+            durationMs: activity.durationMs,
+            startedAt: activity.startedAt,
+            endsAt: activity.endsAt,
+          },
+        ],
+      });
+    } else if (isValidLegacyStopwatch(activity)) {
+      state = normalizeActivityState({
+        timers: [],
+        stopwatch: {
+          startedAt: activity.startedAt,
+        },
+      });
+    } else {
+      throw new Error("Invalid legacy activity");
+    }
 
-    return state;
+    try {
+      await saveActivityState(state);
+      await LocalStorage.removeItem(LEGACY_ACTIVE_ACTIVITY_KEY);
+      return state;
+    } catch {
+      return emptyActivityState();
+    }
   } catch {
     await LocalStorage.removeItem(LEGACY_ACTIVE_ACTIVITY_KEY);
     return emptyActivityState();
@@ -557,22 +568,6 @@ async function migrateLegacyActivityState(): Promise<ActivityState> {
 
 function createActivityId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-}
-
-function parsePositiveInteger(value: string): number {
-  const normalizedValue = value.trim();
-
-  if (!normalizedValue) {
-    return 0;
-  }
-
-  const parsedValue = Number(normalizedValue);
-
-  if (!Number.isInteger(parsedValue) || parsedValue < 0) {
-    return Number.NaN;
-  }
-
-  return parsedValue;
 }
 
 function parseColonDuration(value: string): number {
@@ -607,4 +602,82 @@ function formatDurationPart(value: number, label: string): string | undefined {
   }
 
   return `${value} ${label}${value === 1 ? "" : "s"}`;
+}
+
+function isValidTimerActivity(value: unknown): value is TimerActivity {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const timer = value as Partial<TimerActivity>;
+
+  return (
+    typeof timer.id === "string" &&
+    timer.id.length > 0 &&
+    isPositiveFiniteNumber(timer.durationMs) &&
+    isFiniteNumber(timer.startedAt) &&
+    isFiniteNumber(timer.endsAt) &&
+    (timer.name === undefined || typeof timer.name === "string")
+  );
+}
+
+function isValidStopwatchActivity(value: unknown): value is StopwatchActivity {
+  return Boolean(
+    value &&
+    typeof value === "object" &&
+    isFiniteNumber((value as Partial<StopwatchActivity>).startedAt),
+  );
+}
+
+function isValidFavoriteTimer(value: unknown): value is FavoriteTimer {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const favorite = value as Partial<FavoriteTimer>;
+
+  return (
+    typeof favorite.id === "string" &&
+    favorite.id.length > 0 &&
+    isPositiveFiniteNumber(favorite.durationMs) &&
+    (favorite.name === undefined || typeof favorite.name === "string")
+  );
+}
+
+function isValidLegacyTimer(value: unknown): value is LegacyActiveActivity & {
+  type: "timer";
+} {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const activity = value as Partial<LegacyActiveActivity>;
+
+  return (
+    activity.type === "timer" &&
+    isPositiveFiniteNumber(activity.durationMs) &&
+    isFiniteNumber(activity.startedAt) &&
+    isFiniteNumber(activity.endsAt) &&
+    (activity.name === undefined || typeof activity.name === "string")
+  );
+}
+
+function isValidLegacyStopwatch(
+  value: unknown,
+): value is LegacyActiveActivity & { type: "stopwatch" } {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const activity = value as Partial<LegacyActiveActivity>;
+
+  return activity.type === "stopwatch" && isFiniteNumber(activity.startedAt);
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function isPositiveFiniteNumber(value: unknown): value is number {
+  return isFiniteNumber(value) && value > 0;
 }

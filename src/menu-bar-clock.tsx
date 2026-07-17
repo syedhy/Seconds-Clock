@@ -1,5 +1,5 @@
 import { Icon, MenuBarExtra, Toast, showHUD, showToast } from "@raycast/api";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { useActiveActivity } from "./hooks/use-active-activity";
 import { useNow } from "./hooks/use-now";
@@ -23,38 +23,67 @@ import {
 export default function Command() {
   const now = useNow();
   const nowMs = now.getTime();
-  const { activityState, isLoading, refreshActivity } =
-    useActiveActivity(nowMs);
+  const { activityState, isLoading, refreshActivity } = useActiveActivity();
+  const [isActionRunning, setIsActionRunning] = useState(false);
   const selectedTimer = activityState
     ? getSelectedTimer(activityState)
     : undefined;
   const displayedActivity = selectedTimer ?? activityState?.stopwatch;
-  const shouldKeepRunning = Boolean(displayedActivity);
+  const isStopwatchRunning = Boolean(activityState?.stopwatch);
+  const completionCheckInFlight = useRef(false);
+
+  async function runMenuAction(action: () => Promise<void>): Promise<void> {
+    setIsActionRunning(true);
+
+    try {
+      await action();
+    } catch {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: "Couldn't Update Menu Bar",
+      });
+    } finally {
+      setIsActionRunning(false);
+    }
+  }
 
   useEffect(() => {
-    removeCompletedTimers(nowMs).then((completedTimers) => {
-      if (completedTimers.length === 0) {
-        return;
-      }
+    if (completionCheckInFlight.current) {
+      return;
+    }
 
-      const completedTitle =
-        completedTimers.length === 1
-          ? `${getTimerTitle(completedTimers[0])} Done`
-          : `${completedTimers.length} Timers Done`;
+    completionCheckInFlight.current = true;
 
-      showHUD(completedTitle);
-      showToast({
-        style: Toast.Style.Success,
-        title: completedTitle,
+    removeCompletedTimers(nowMs)
+      .then(async (completedTimers) => {
+        if (completedTimers.length === 0) {
+          return;
+        }
+
+        const completedTitle =
+          completedTimers.length === 1
+            ? `${getTimerTitle(completedTimers[0])} Done`
+            : `${completedTimers.length} Timers Done`;
+
+        await showHUD(completedTitle);
+        await showToast({
+          style: Toast.Style.Success,
+          title: completedTitle,
+        });
+        await refreshActivity();
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        completionCheckInFlight.current = false;
       });
-      refreshActivity();
-    });
   }, [nowMs, refreshActivity]);
 
-  if (!isLoading && !displayedActivity) {
+  if (!isLoading && !displayedActivity && !isActionRunning) {
     return null;
   }
 
+  // A running stopwatch is an ongoing activity, so keep the command loaded
+  // while its elapsed time is being rendered live.
   return (
     <MenuBarExtra
       title={
@@ -67,7 +96,7 @@ export default function Command() {
             : "Seconds Clock"
       }
       tooltip="Seconds Clock"
-      isLoading={isLoading || shouldKeepRunning}
+      isLoading={isLoading || isActionRunning || isStopwatchRunning}
     >
       {activityState ? (
         <MenuBarContent
@@ -75,6 +104,7 @@ export default function Command() {
           selectedTimer={selectedTimer}
           now={nowMs}
           refreshActivity={refreshActivity}
+          runMenuAction={runMenuAction}
         />
       ) : null}
     </MenuBarExtra>
@@ -86,37 +116,50 @@ function MenuBarContent({
   selectedTimer,
   now,
   refreshActivity,
+  runMenuAction,
 }: {
   state: ActivityState;
   selectedTimer?: TimerActivity;
   now: number;
   refreshActivity: () => Promise<void>;
+  runMenuAction: (action: () => Promise<void>) => Promise<void>;
 }) {
   const otherTimers = sortTimersByEnding(state.timers).filter(
     (timer) => timer.id !== selectedTimer?.id,
   );
 
-  async function removeTimerAndRefresh(timerId: string) {
-    await removeTimer(timerId);
-    await showHUD("Timer Stopped");
-    await refreshActivity();
+  function removeTimerAndRefresh(timerId: string): Promise<void> {
+    return runMenuAction(async () => {
+      await removeTimer(timerId);
+      await showHUD("Timer Stopped");
+      await refreshActivity();
+    });
   }
 
-  async function extendTimerAndRefresh(timerId: string, minutes: number) {
-    await extendTimer(timerId, minutes * 60 * 1000);
-    await showHUD(`Added ${minutes} Minutes`);
-    await refreshActivity();
+  function extendTimerAndRefresh(
+    timerId: string,
+    minutes: number,
+  ): Promise<void> {
+    return runMenuAction(async () => {
+      await extendTimer(timerId, minutes * 60 * 1000);
+      await showHUD(`Added ${minutes} Minutes`);
+      await refreshActivity();
+    });
   }
 
-  async function selectTimerAndRefresh(timerId: string) {
-    await selectTimer(timerId);
-    await refreshActivity();
+  function selectTimerAndRefresh(timerId: string): Promise<void> {
+    return runMenuAction(async () => {
+      await selectTimer(timerId);
+      await refreshActivity();
+    });
   }
 
-  async function stopStopwatchAndRefresh() {
-    await stopStopwatch();
-    await showHUD("Stopwatch Stopped");
-    await refreshActivity();
+  function stopStopwatchAndRefresh(): Promise<void> {
+    return runMenuAction(async () => {
+      await stopStopwatch();
+      await showHUD("Stopwatch Stopped");
+      await refreshActivity();
+    });
   }
 
   return (
@@ -183,7 +226,7 @@ function TimerMenuItem({
 }) {
   return (
     <MenuBarExtra.Submenu
-      title={`${getTimerTitle(timer)} ${formatActivityDuration(getTimerRemainingMs(timer, now))}${isSelected ? " (Shown)" : ""}`}
+      title={`${getTimerMenuBarTitle(timer, now)}${isSelected ? " (Shown)" : ""}`}
       icon={Icon.Clock}
     >
       {isSelected ? (

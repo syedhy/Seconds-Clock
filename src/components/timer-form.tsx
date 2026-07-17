@@ -24,10 +24,14 @@ import {
 export function TimerForm() {
   const [searchText, setSearchText] = useState("");
   const [favorites, setFavorites] = useState<FavoriteTimer[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const parsedTimer = useMemo(() => parseTimerInput(searchText), [searchText]);
 
   useEffect(() => {
-    getFavoriteTimers().then(setFavorites);
+    getFavoriteTimers()
+      .then(setFavorites)
+      .catch(() => setFavorites([]))
+      .finally(() => setIsLoading(false));
   }, []);
 
   async function startTimer(timer: ParsedTimerInput) {
@@ -63,13 +67,13 @@ export function TimerForm() {
 
   return (
     <List
-      navigationTitle="Set Timer"
       searchText={searchText}
       onSearchTextChange={setSearchText}
-      searchBarPlaceholder="Type a duration, e.g. Tea 2h 5m 3s"
+      searchBarPlaceholder="Name + duration : Coffee 2h 5m 3s"
       filtering={false}
+      isLoading={isLoading}
     >
-      {parsedTimer ? (
+      {!isLoading && parsedTimer ? (
         <List.Section title="Timer">
           <TimerResultItem
             timer={parsedTimer}
@@ -77,15 +81,15 @@ export function TimerForm() {
             onSaveFavorite={saveFavorite}
           />
         </List.Section>
-      ) : favorites.length === 0 ? (
+      ) : !isLoading && favorites.length === 0 ? (
         <List.EmptyView
           icon={Icon.Clock}
           title="Type a Timer Duration"
-          description="Try 25m, 2h 5m 3s, 2hr 5min 3 sec, or Tea 15m."
+          description="Try Tea 2h 5m 3s or Sleep 2hr 5min"
         />
       ) : null}
 
-      {favorites.length > 0 ? (
+      {!isLoading && favorites.length > 0 ? (
         <List.Section title="Favorites">
           {favorites.map((favorite) => (
             <FavoriteTimerItem

@@ -28,8 +28,7 @@ import {
 export default function Command() {
   const now = useNow();
   const nowMs = now.getTime();
-  const { activityState, isLoading, refreshActivity } =
-    useActiveActivity(nowMs);
+  const { activityState, isLoading, refreshActivity } = useActiveActivity();
   const timers = activityState ? sortTimersByEnding(activityState.timers) : [];
   const selectedTimer = activityState
     ? getSelectedTimer(activityState)
@@ -62,12 +61,8 @@ export default function Command() {
   }
 
   return (
-    <List
-      navigationTitle="Manage Timers"
-      isLoading={isLoading}
-      searchBarPlaceholder="Search timers"
-    >
-      {timers.length === 0 ? (
+    <List isLoading={isLoading} searchBarPlaceholder="Search timers">
+      {isLoading ? null : timers.length === 0 ? (
         <List.EmptyView
           icon={Icon.Clock}
           title="No Running Timers"
