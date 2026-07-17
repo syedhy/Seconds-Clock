@@ -30,20 +30,26 @@ export default function Command() {
     : undefined;
   const displayedActivity = selectedTimer ?? activityState?.stopwatch;
   const completionCheckInFlight = useRef(false);
+  const actionQueue = useRef(Promise.resolve());
 
   async function runMenuAction(action: () => Promise<void>): Promise<void> {
-    setIsActionRunning(true);
+    const queuedAction = actionQueue.current.then(async () => {
+      setIsActionRunning(true);
 
-    try {
-      await action();
-    } catch {
-      await showToast({
-        style: Toast.Style.Failure,
-        title: "Couldn't Update Menu Bar",
-      });
-    } finally {
-      setIsActionRunning(false);
-    }
+      try {
+        await action();
+      } catch {
+        await showToast({
+          style: Toast.Style.Failure,
+          title: "Couldn't Update Menu Bar",
+        }).catch(() => undefined);
+      } finally {
+        setIsActionRunning(false);
+      }
+    });
+
+    actionQueue.current = queuedAction.catch(() => undefined);
+    return queuedAction;
   }
 
   useEffect(() => {
@@ -64,12 +70,12 @@ export default function Command() {
             ? `${getTimerTitle(completedTimers[0])} Done`
             : `${completedTimers.length} Timers Done`;
 
-        await showHUD(completedTitle);
-        await showToast({
+        await refreshActivity();
+        void showHUD(completedTitle).catch(() => undefined);
+        void showToast({
           style: Toast.Style.Success,
           title: completedTitle,
-        });
-        await refreshActivity();
+        }).catch(() => undefined);
       })
       .catch(() => undefined)
       .finally(() => {
@@ -132,7 +138,7 @@ function MenuBarContent({
     return runMenuAction(async () => {
       const nextState = await removeTimer(timerId);
       await refreshActivity(nextState);
-      void showHUD("Timer Stopped");
+      void showHUD("Timer Stopped").catch(() => undefined);
     });
   }
 
@@ -143,7 +149,7 @@ function MenuBarContent({
     return runMenuAction(async () => {
       const nextState = await extendTimer(timerId, minutes * 60 * 1000);
       await refreshActivity(nextState);
-      void showHUD(`Added ${minutes} Minutes`);
+      void showHUD(`Added ${minutes} Minutes`).catch(() => undefined);
     });
   }
 
@@ -158,7 +164,7 @@ function MenuBarContent({
     return runMenuAction(async () => {
       const nextState = await stopStopwatch();
       await refreshActivity(nextState);
-      void showHUD("Stopwatch Stopped");
+      void showHUD("Stopwatch Stopped").catch(() => undefined);
     });
   }
 
@@ -169,7 +175,6 @@ function MenuBarContent({
           <TimerMenuItem
             timer={selectedTimer}
             actionLabel={timerLabels.get(selectedTimer.id) ?? "Timer"}
-            now={now}
             isSelected
             onSelect={selectTimerAndRefresh}
             onRemove={removeTimerAndRefresh}
@@ -185,7 +190,6 @@ function MenuBarContent({
               key={timer.id}
               timer={timer}
               actionLabel={timerLabels.get(timer.id) ?? "Timer"}
-              now={now}
               onSelect={selectTimerAndRefresh}
               onRemove={removeTimerAndRefresh}
               onExtend={extendTimerAndRefresh}
@@ -197,7 +201,10 @@ function MenuBarContent({
       {state.stopwatch ? (
         <MenuBarExtra.Section title="Stopwatch">
           <MenuBarExtra.Item
-            title={`Stopwatch ${formatActivityDuration(getStopwatchElapsedMs(state.stopwatch, now))}`}
+            title="Stopwatch"
+            subtitle={formatActivityDuration(
+              getStopwatchElapsedMs(state.stopwatch, now),
+            )}
             icon={Icon.Stopwatch}
           />
           <MenuBarExtra.Item
@@ -214,7 +221,6 @@ function MenuBarContent({
 function TimerMenuItem({
   timer,
   actionLabel,
-  now,
   isSelected = false,
   onSelect,
   onRemove,
@@ -222,7 +228,6 @@ function TimerMenuItem({
 }: {
   timer: TimerActivity;
   actionLabel: string;
-  now: number;
   isSelected?: boolean;
   onSelect: (timerId: string) => Promise<void>;
   onRemove: (timerId: string) => Promise<void>;
@@ -230,7 +235,7 @@ function TimerMenuItem({
 }) {
   return (
     <MenuBarExtra.Submenu
-      title={`${getTimerMenuBarTitle(timer, now)}${isSelected ? " (Shown)" : ""}`}
+      title={`${actionLabel}${isSelected ? " (Shown)" : ""}`}
       icon={Icon.Clock}
     >
       {isSelected ? (

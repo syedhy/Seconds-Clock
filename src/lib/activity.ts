@@ -1,8 +1,24 @@
-import { LaunchType, LocalStorage, launchCommand } from "@raycast/api";
+import { mkdir, open, rm, stat } from "node:fs/promises";
+import type { FileHandle } from "node:fs/promises";
+import { join } from "node:path";
+
+import {
+  LaunchType,
+  LocalStorage,
+  environment,
+  launchCommand,
+} from "@raycast/api";
 
 const ACTIVITY_STATE_KEY = "activityState";
 const FAVORITE_TIMERS_KEY = "favoriteTimers";
 const LEGACY_ACTIVE_ACTIVITY_KEY = "activeActivity";
+const ACTIVITY_LOCK_PATH = join(
+  environment.supportPath,
+  ".seconds-clock-activity.lock",
+);
+const LOCK_TIMEOUT_MS = 5000;
+const LOCK_STALE_MS = 10000;
+const LOCK_RETRY_MS = 25;
 const SECOND_MS = 1000;
 const MINUTE_MS = 60 * SECOND_MS;
 const HOUR_MS = 60 * MINUTE_MS;
@@ -49,6 +65,177 @@ const emptyActivityState = (): ActivityState => ({
 });
 
 export async function getActivityState(): Promise<ActivityState> {
+  return withActivityLock(getActivityStateUnlocked);
+}
+
+export async function addTimer(
+  durationMs: number,
+  name?: string,
+): Promise<TimerActivity> {
+  const { result } = await updateActivityState((state) => {
+    const timer = createTimerActivity(durationMs, name);
+    const timers = sortTimersByEnding([...state.timers, timer]);
+
+    return {
+      state: {
+        ...state,
+        timers,
+        selectedTimerId: state.selectedTimerId ?? getDefaultTimer(timers)?.id,
+      },
+      result: timer,
+    };
+  });
+
+  return result;
+}
+
+export async function updateTimerName(
+  timerId: string,
+  name?: string,
+): Promise<ActivityState> {
+  const { state } = await updateActivityState((currentState) => ({
+    state: {
+      ...currentState,
+      timers: currentState.timers.map((timer) =>
+        timer.id === timerId
+          ? {
+              ...timer,
+              name: name?.trim() || undefined,
+            }
+          : timer,
+      ),
+    },
+    result: undefined,
+  }));
+
+  return state;
+}
+
+export async function extendTimer(
+  timerId: string,
+  additionalMs: number,
+): Promise<ActivityState> {
+  const { state } = await updateActivityState((currentState) => ({
+    state: {
+      ...currentState,
+      timers: currentState.timers.map((timer) =>
+        timer.id === timerId
+          ? {
+              ...timer,
+              durationMs: timer.durationMs + additionalMs,
+              endsAt: timer.endsAt + additionalMs,
+            }
+          : timer,
+      ),
+    },
+    result: undefined,
+  }));
+
+  return state;
+}
+
+export async function selectTimer(timerId: string): Promise<ActivityState> {
+  const { state } = await updateActivityState((currentState) => ({
+    state: currentState.timers.some((timer) => timer.id === timerId)
+      ? {
+          ...currentState,
+          selectedTimerId: timerId,
+        }
+      : currentState,
+    result: undefined,
+  }));
+
+  return state;
+}
+
+export async function removeTimer(timerId: string): Promise<ActivityState> {
+  const { state } = await updateActivityState((currentState) => {
+    const timers = currentState.timers.filter((timer) => timer.id !== timerId);
+    const selectedTimerId =
+      currentState.selectedTimerId === timerId
+        ? getDefaultTimer(timers)?.id
+        : currentState.selectedTimerId;
+
+    return {
+      state: {
+        ...currentState,
+        timers,
+        selectedTimerId,
+      },
+      result: undefined,
+    };
+  });
+
+  return state;
+}
+
+export async function removeAllTimers(): Promise<ActivityState> {
+  const { state } = await updateActivityState((currentState) => ({
+    state: {
+      ...currentState,
+      timers: [],
+      selectedTimerId: undefined,
+    },
+    result: undefined,
+  }));
+
+  return state;
+}
+
+export async function startStopwatch(): Promise<void> {
+  await updateActivityState((state) => ({
+    state: {
+      ...state,
+      stopwatch: createStopwatchActivity(),
+    },
+    result: undefined,
+  }));
+}
+
+export async function stopStopwatch(): Promise<ActivityState> {
+  const { state } = await updateActivityState((currentState) => ({
+    state: {
+      ...currentState,
+      stopwatch: undefined,
+    },
+    result: undefined,
+  }));
+
+  return state;
+}
+
+export async function removeCompletedTimers(
+  now = Date.now(),
+): Promise<TimerActivity[]> {
+  return withActivityLock(async () => {
+    const state = await getActivityStateUnlocked();
+    const completedTimers = state.timers.filter(
+      (timer) => getTimerRemainingMs(timer, now) === 0,
+    );
+
+    if (completedTimers.length === 0) {
+      return [];
+    }
+
+    const completedTimerIds = new Set(completedTimers.map((timer) => timer.id));
+    const timers = state.timers.filter(
+      (timer) => !completedTimerIds.has(timer.id),
+    );
+    const selectedTimerId = completedTimerIds.has(state.selectedTimerId ?? "")
+      ? getDefaultTimer(timers)?.id
+      : state.selectedTimerId;
+
+    await saveActivityStateUnlocked({
+      ...state,
+      timers,
+      selectedTimerId,
+    });
+
+    return completedTimers;
+  });
+}
+
+async function getActivityStateUnlocked(): Promise<ActivityState> {
   const storedState = await LocalStorage.getItem<string>(ACTIVITY_STATE_KEY);
 
   if (storedState) {
@@ -61,173 +248,89 @@ export async function getActivityState(): Promise<ActivityState> {
     }
   }
 
-  return await migrateLegacyActivityState();
+  return migrateLegacyActivityState();
 }
 
-export async function saveActivityState(state: ActivityState): Promise<void> {
+async function saveActivityStateUnlocked(state: ActivityState): Promise<void> {
   await LocalStorage.setItem(
     ACTIVITY_STATE_KEY,
     JSON.stringify(normalizeActivityState(state)),
   );
 }
 
-export async function addTimer(
-  durationMs: number,
-  name?: string,
-): Promise<TimerActivity> {
-  const state = await getActivityState();
-  const timer = createTimerActivity(durationMs, name);
-  const timers = sortTimersByEnding([...state.timers, timer]);
+type ActivityMutationResult<T> = {
+  state: ActivityState;
+  result: T;
+};
 
-  await saveActivityState({
-    ...state,
-    timers,
-    selectedTimerId: state.selectedTimerId ?? getDefaultTimer(timers)?.id,
+async function updateActivityState<T>(
+  mutate: (state: ActivityState) => ActivityMutationResult<T>,
+): Promise<ActivityMutationResult<T>> {
+  return withActivityLock(async () => {
+    const currentState = await getActivityStateUnlocked();
+    const { state, result } = mutate(currentState);
+    const nextState = normalizeActivityState(state);
+
+    await saveActivityStateUnlocked(nextState);
+
+    return {
+      state: nextState,
+      result,
+    };
   });
-
-  return timer;
 }
 
-export async function updateTimerName(
-  timerId: string,
-  name?: string,
-): Promise<ActivityState> {
-  const state = await getActivityState();
-  const timers = state.timers.map((timer) =>
-    timer.id === timerId
-      ? {
-          ...timer,
-          name: name?.trim() || undefined,
-        }
-      : timer,
-  );
-  const nextState = normalizeActivityState({
-    ...state,
-    timers,
-  });
+async function withActivityLock<T>(operation: () => Promise<T>): Promise<T> {
+  // Raycast can run different commands in separate processes. LocalStorage
+  // has no compare-and-swap operation, so serialize every read-modify-write
+  // transaction through a lock shared by those processes.
+  const startedAt = Date.now();
+  let lockHandle: FileHandle | undefined;
 
-  await saveActivityState(nextState);
-  return nextState;
-}
+  while (!lockHandle) {
+    try {
+      await mkdir(environment.supportPath, { recursive: true });
+      lockHandle = await open(ACTIVITY_LOCK_PATH, "wx");
+      await lockHandle.writeFile(`${process.pid}\n`);
+    } catch (error) {
+      if (lockHandle) {
+        await lockHandle.close().catch(() => undefined);
+        lockHandle = undefined;
+        await rm(ACTIVITY_LOCK_PATH, { force: true }).catch(() => undefined);
+      }
 
-export async function extendTimer(
-  timerId: string,
-  additionalMs: number,
-): Promise<ActivityState> {
-  const state = await getActivityState();
-  const timers = state.timers.map((timer) =>
-    timer.id === timerId
-      ? {
-          ...timer,
-          durationMs: timer.durationMs + additionalMs,
-          endsAt: timer.endsAt + additionalMs,
-        }
-      : timer,
-  );
-  const nextState = normalizeActivityState({
-    ...state,
-    timers,
-  });
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") {
+        throw error;
+      }
 
-  await saveActivityState(nextState);
-  return nextState;
-}
+      if (await isStaleActivityLock()) {
+        await rm(ACTIVITY_LOCK_PATH, { force: true });
+        continue;
+      }
 
-export async function selectTimer(timerId: string): Promise<ActivityState> {
-  const state = await getActivityState();
-  const timer = state.timers.find(
-    (existingTimer) => existingTimer.id === timerId,
-  );
+      if (Date.now() - startedAt >= LOCK_TIMEOUT_MS) {
+        throw new Error("Timed out waiting for the activity lock");
+      }
 
-  if (!timer) {
-    return state;
+      await new Promise((resolve) => setTimeout(resolve, LOCK_RETRY_MS));
+    }
   }
 
-  const nextState = normalizeActivityState({
-    ...state,
-    selectedTimerId: timer.id,
-  });
-
-  await saveActivityState(nextState);
-  return nextState;
-}
-
-export async function removeTimer(timerId: string): Promise<ActivityState> {
-  const state = await getActivityState();
-  const timers = state.timers.filter((timer) => timer.id !== timerId);
-  const selectedTimerId =
-    state.selectedTimerId === timerId
-      ? getDefaultTimer(timers)?.id
-      : state.selectedTimerId;
-  const nextState = normalizeActivityState({
-    ...state,
-    timers,
-    selectedTimerId,
-  });
-
-  await saveActivityState(nextState);
-  return nextState;
-}
-
-export async function removeAllTimers(): Promise<ActivityState> {
-  const state = await getActivityState();
-  const nextState = normalizeActivityState({
-    ...state,
-    timers: [],
-    selectedTimerId: undefined,
-  });
-
-  await saveActivityState(nextState);
-  return nextState;
-}
-
-export async function startStopwatch(): Promise<void> {
-  const state = await getActivityState();
-
-  await saveActivityState({
-    ...state,
-    stopwatch: createStopwatchActivity(),
-  });
-}
-
-export async function stopStopwatch(): Promise<ActivityState> {
-  const state = await getActivityState();
-  const nextState = normalizeActivityState({
-    ...state,
-    stopwatch: undefined,
-  });
-
-  await saveActivityState(nextState);
-  return nextState;
-}
-
-export async function removeCompletedTimers(
-  now = Date.now(),
-): Promise<TimerActivity[]> {
-  const state = await getActivityState();
-  const completedTimers = state.timers.filter(
-    (timer) => getTimerRemainingMs(timer, now) === 0,
-  );
-
-  if (completedTimers.length === 0) {
-    return [];
+  try {
+    return await operation();
+  } finally {
+    await lockHandle.close().catch(() => undefined);
+    await rm(ACTIVITY_LOCK_PATH, { force: true }).catch(() => undefined);
   }
+}
 
-  const completedTimerIds = new Set(completedTimers.map((timer) => timer.id));
-  const timers = state.timers.filter(
-    (timer) => !completedTimerIds.has(timer.id),
-  );
-  const selectedTimerId = completedTimerIds.has(state.selectedTimerId ?? "")
-    ? getDefaultTimer(timers)?.id
-    : state.selectedTimerId;
-
-  await saveActivityState({
-    ...state,
-    timers,
-    selectedTimerId,
-  });
-
-  return completedTimers;
+async function isStaleActivityLock(): Promise<boolean> {
+  try {
+    const lockStats = await stat(ACTIVITY_LOCK_PATH);
+    return Date.now() - lockStats.mtimeMs > LOCK_STALE_MS;
+  } catch {
+    return false;
+  }
 }
 
 export async function showActivityInMenuBar(): Promise<void> {
@@ -242,6 +345,10 @@ export async function showActivityInMenuBar(): Promise<void> {
 }
 
 export async function getFavoriteTimers(): Promise<FavoriteTimer[]> {
+  return withActivityLock(getFavoriteTimersUnlocked);
+}
+
+async function getFavoriteTimersUnlocked(): Promise<FavoriteTimer[]> {
   const storedFavorites =
     await LocalStorage.getItem<string>(FAVORITE_TIMERS_KEY);
 
@@ -276,28 +383,34 @@ export async function addFavoriteTimer(
   durationMs: number,
   name?: string,
 ): Promise<FavoriteTimer> {
-  const favorites = await getFavoriteTimers();
-  const favorite = {
-    id: createActivityId(),
-    name: name?.trim() || undefined,
-    durationMs,
-  };
+  return withActivityLock(async () => {
+    const favorites = await getFavoriteTimersUnlocked();
+    const favorite = {
+      id: createActivityId(),
+      name: name?.trim() || undefined,
+      durationMs,
+    };
 
-  await LocalStorage.setItem(
-    FAVORITE_TIMERS_KEY,
-    JSON.stringify([...favorites, favorite]),
-  );
+    await LocalStorage.setItem(
+      FAVORITE_TIMERS_KEY,
+      JSON.stringify([...favorites, favorite]),
+    );
 
-  return favorite;
+    return favorite;
+  });
 }
 
 export async function removeFavoriteTimer(favoriteId: string): Promise<void> {
-  const favorites = await getFavoriteTimers();
+  await withActivityLock(async () => {
+    const favorites = await getFavoriteTimersUnlocked();
 
-  await LocalStorage.setItem(
-    FAVORITE_TIMERS_KEY,
-    JSON.stringify(favorites.filter((favorite) => favorite.id !== favoriteId)),
-  );
+    await LocalStorage.setItem(
+      FAVORITE_TIMERS_KEY,
+      JSON.stringify(
+        favorites.filter((favorite) => favorite.id !== favoriteId),
+      ),
+    );
+  });
 }
 
 export function getSelectedTimer(
@@ -557,7 +670,7 @@ async function migrateLegacyActivityState(): Promise<ActivityState> {
     }
 
     try {
-      await saveActivityState(state);
+      await saveActivityStateUnlocked(state);
       await LocalStorage.removeItem(LEGACY_ACTIVE_ACTIVITY_KEY);
       return state;
     } catch {
