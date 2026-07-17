@@ -16,6 +16,7 @@ import {
   getTimerRemainingMs,
   getTimerTitle,
   addFavoriteTimer,
+  extendTimer,
   removeAllTimers,
   removeTimer,
   selectTimer,
@@ -56,6 +57,12 @@ export default function Command() {
     await showHUD(`${getTimerTitle(timer)} Saved as Favorite`);
   }
 
+  async function addTime(timer: TimerActivity, minutes: number) {
+    await extendTimer(timer.id, minutes * 60 * 1000);
+    await showHUD(`Added ${minutes} Minutes to ${getTimerTitle(timer)}`);
+    await refreshActivity();
+  }
+
   return (
     <List isLoading={isLoading} searchBarPlaceholder="Search timers">
       {isLoading ? null : timers.length === 0 ? (
@@ -75,6 +82,7 @@ export default function Command() {
             onStop={stopTimer}
             onStopAll={stopAllTimers}
             onSaveFavorite={saveTimerAsFavorite}
+            onAddTime={addTime}
             onRefresh={refreshActivity}
           />
         ))
@@ -91,6 +99,7 @@ function TimerListItem({
   onStop,
   onStopAll,
   onSaveFavorite,
+  onAddTime,
   onRefresh,
 }: {
   timer: TimerActivity;
@@ -100,6 +109,7 @@ function TimerListItem({
   onStop: (timer: TimerActivity) => Promise<void>;
   onStopAll: () => Promise<void>;
   onSaveFavorite: (timer: TimerActivity) => Promise<void>;
+  onAddTime: (timer: TimerActivity, minutes: number) => Promise<void>;
   onRefresh: () => Promise<void>;
 }) {
   return (
@@ -119,6 +129,16 @@ function TimerListItem({
             title="Stop Timer"
             icon={Icon.XMarkCircle}
             onAction={() => onStop(timer)}
+          />
+          <Action
+            title="Add 5 Minutes"
+            icon={Icon.Plus}
+            onAction={() => onAddTime(timer, 5)}
+          />
+          <Action
+            title="Add 30 Minutes"
+            icon={Icon.Plus}
+            onAction={() => onAddTime(timer, 30)}
           />
           <Action.Push
             title="Rename Timer"
