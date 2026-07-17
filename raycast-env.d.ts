@@ -26,10 +26,10 @@ declare namespace Preferences {
   export type StopTimer = ExtensionPreferences & {}
   /** Preferences accessible in the `start-stopwatch` command */
   export type StartStopwatch = ExtensionPreferences & {}
+  /** Preferences accessible in the `show-stopwatch` command */
+  export type ShowStopwatch = ExtensionPreferences & {}
   /** Preferences accessible in the `stop-stopwatch` command */
   export type StopStopwatch = ExtensionPreferences & {}
-  /** Preferences accessible in the `timer-notifications` command */
-  export type TimerNotifications = ExtensionPreferences & {}
 }
 
 declare namespace Arguments {
@@ -43,9 +43,9 @@ declare namespace Arguments {
   export type StopTimer = {}
   /** Arguments passed to the `start-stopwatch` command */
   export type StartStopwatch = {}
+  /** Arguments passed to the `show-stopwatch` command */
+  export type ShowStopwatch = {}
   /** Arguments passed to the `stop-stopwatch` command */
   export type StopStopwatch = {}
-  /** Arguments passed to the `timer-notifications` command */
-  export type TimerNotifications = {}
 }
 

@@ -52,17 +52,16 @@
       "mode": "no-view"
     },
     {
+      "name": "show-stopwatch",
+      "title": "Show Stopwatch",
+      "description": "View the running stopwatch in Raycast.",
+      "mode": "view"
+    },
+    {
       "name": "stop-stopwatch",
       "title": "Stop Stopwatch",
       "description": "Stop the running stopwatch.",
       "mode": "no-view"
-    },
-    {
-      "name": "timer-notifications",
-      "title": "Timer Notifications",
-      "description": "Notify you when a running timer finishes.",
-      "mode": "no-view",
-      "interval": "10s"
     }
   ],
   "preferences": [

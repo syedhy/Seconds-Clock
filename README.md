@@ -45,16 +45,16 @@ Starts a stopwatch from zero.
 
 Stops the running stopwatch without affecting timers.
 
-### Timer Notifications
+### Show Stopwatch
 
-Runs in the background to detect completed timers and show a Raycast toast with the timer name.
+Shows the current stopwatch elapsed time live in Raycast.
 
 Timer behavior:
 
 - Multiple named timers at once
 - Countdown with seconds
 - Add 5 or 30 minutes from Manage Timers
-- Finished timers show a named Raycast completion indication and are removed automatically
+- Finished timers are removed automatically when Manage Timers refreshes
 
 Stopwatch behavior:
 

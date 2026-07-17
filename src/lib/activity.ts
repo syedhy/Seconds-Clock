@@ -2,12 +2,7 @@ import { mkdir, open, rm, stat } from "node:fs/promises";
 import type { FileHandle } from "node:fs/promises";
 import { join } from "node:path";
 
-import {
-  LaunchType,
-  LocalStorage,
-  environment,
-  launchCommand,
-} from "@raycast/api";
+import { LocalStorage, environment } from "@raycast/api";
 
 const ACTIVITY_STATE_KEY = "activityState";
 const FAVORITE_TIMERS_KEY = "favoriteTimers";
@@ -330,17 +325,6 @@ async function isStaleActivityLock(): Promise<boolean> {
     return Date.now() - lockStats.mtimeMs > LOCK_STALE_MS;
   } catch {
     return false;
-  }
-}
-
-export async function startTimerNotifications(): Promise<void> {
-  try {
-    await launchCommand({
-      name: "timer-notifications",
-      type: LaunchType.Background,
-    });
-  } catch {
-    // The timer remains persisted even if the notification worker is disabled.
   }
 }
 

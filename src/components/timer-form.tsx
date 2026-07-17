@@ -16,7 +16,6 @@ import {
   getFavoriteTimers,
   parseTimerInput,
   removeFavoriteTimer,
-  startTimerNotifications,
   type FavoriteTimer,
   type ParsedTimerInput,
 } from "../lib/activity";
@@ -36,7 +35,6 @@ export function TimerForm() {
 
   async function startTimer(timer: ParsedTimerInput) {
     await addTimer(timer.durationMs, timer.name);
-    await startTimerNotifications();
 
     await showHUD(`${timer.name || "Timer"} Started`);
     await closeMainWindow({ clearRootSearch: true });

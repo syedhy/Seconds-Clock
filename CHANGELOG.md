@@ -6,7 +6,7 @@
 - Reduced unnecessary LocalStorage polling in activity views.
 - Hardened timer, stopwatch, favorite, and legacy state parsing.
 - Removed the unreliable menu-bar timer surface.
-- Added a dedicated background timer notification command.
+- Removed the unreliable background timer notification worker.
 - Kept Manage Timers open while actions show non-closing toasts.
 
 ## [Initial Release] - {PR_MERGE_DATE}
@@ -16,4 +16,4 @@
 - Added multiple named countdown timers with favorites.
 - Added timer management, renaming, stopping, and timer selection.
 - Added a stopwatch command.
-- Added timer completion notifications.
+- Added a live Show Stopwatch command.

@@ -8,6 +8,7 @@ import {
   showToast,
   useNavigation,
 } from "@raycast/api";
+import { useEffect } from "react";
 
 import { useActiveActivity } from "./hooks/use-active-activity";
 import { useNow } from "./hooks/use-now";
@@ -18,6 +19,7 @@ import {
   addFavoriteTimer,
   extendTimer,
   removeAllTimers,
+  removeCompletedTimers,
   removeTimer,
   sortTimersByEnding,
   updateTimerName,
@@ -29,6 +31,20 @@ export default function Command() {
   const nowMs = now.getTime();
   const { activityState, isLoading, refreshActivity } = useActiveActivity();
   const timers = activityState ? sortTimersByEnding(activityState.timers) : [];
+
+  useEffect(() => {
+    if (isLoading) {
+      return;
+    }
+
+    void removeCompletedTimers(nowMs)
+      .then((completedTimers) => {
+        if (completedTimers.length > 0) {
+          void refreshActivity();
+        }
+      })
+      .catch(() => undefined);
+  }, [isLoading, nowMs, refreshActivity]);
 
   async function stopTimer(timer: TimerActivity) {
     await removeTimer(timer.id);
