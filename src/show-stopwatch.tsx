@@ -1,13 +1,22 @@
-import { Icon, List } from "@raycast/api";
+import { ActionPanel, Action, Icon, List } from "@raycast/api";
 
 import { useActiveActivity } from "./hooks/use-active-activity";
 import { useNow } from "./hooks/use-now";
-import { formatActivityDuration, getStopwatchElapsedMs } from "./lib/activity";
+import {
+  formatActivityDuration,
+  getStopwatchElapsedMs,
+  stopStopwatch,
+} from "./lib/activity";
 
 export default function Command() {
   const now = useNow();
-  const { activityState, isLoading } = useActiveActivity();
+  const { activityState, isLoading, refreshActivity } = useActiveActivity();
   const stopwatch = activityState?.stopwatch;
+
+  const handleStop = async () => {
+    const nextState = await stopStopwatch();
+    await refreshActivity(nextState);
+  };
 
   return (
     <List isLoading={isLoading} navigationTitle="Stopwatch">
@@ -18,6 +27,15 @@ export default function Command() {
           )}
           subtitle="Running"
           icon={Icon.Stopwatch}
+          actions={
+            <ActionPanel>
+              <Action
+                title="Stop Stopwatch"
+                icon={Icon.Stopwatch}
+                onAction={handleStop}
+              />
+            </ActionPanel>
+          }
         />
       ) : !isLoading ? (
         <List.EmptyView
