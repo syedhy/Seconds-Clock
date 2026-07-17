@@ -56,11 +56,6 @@ export type ParsedTimerInput = {
   name?: string;
 };
 
-export type ActivityStartResult<T> = {
-  activity: T;
-  shouldShowMenuBar: boolean;
-};
-
 type LegacyActiveActivity =
   | (Omit<TimerActivity, "id"> & { type: "timer" })
   | (StopwatchActivity & { type: "stopwatch" });
@@ -76,9 +71,8 @@ export async function getActivityState(): Promise<ActivityState> {
 export async function addTimer(
   durationMs: number,
   name?: string,
-): Promise<ActivityStartResult<TimerActivity>> {
+): Promise<TimerActivity> {
   const { result } = await updateActivityState((state) => {
-    const shouldShowMenuBar = !hasRunningActivity(state);
     const timer = createTimerActivity(durationMs, name);
     const timers = sortTimersByEnding([...state.timers, timer]);
 
@@ -88,10 +82,7 @@ export async function addTimer(
         timers,
         selectedTimerId: state.selectedTimerId ?? getDefaultTimer(timers)?.id,
       },
-      result: {
-        activity: timer,
-        shouldShowMenuBar,
-      },
+      result: timer,
     };
   });
 
@@ -191,25 +182,14 @@ export async function removeAllTimers(): Promise<ActivityState> {
   return state;
 }
 
-export async function startStopwatch(): Promise<
-  ActivityStartResult<StopwatchActivity>
-> {
-  const { result } = await updateActivityState((state) => {
-    const stopwatch = createStopwatchActivity();
-
-    return {
-      state: {
-        ...state,
-        stopwatch,
-      },
-      result: {
-        activity: stopwatch,
-        shouldShowMenuBar: !hasRunningActivity(state),
-      },
-    };
-  });
-
-  return result;
+export async function startStopwatch(): Promise<void> {
+  await updateActivityState((state) => ({
+    state: {
+      ...state,
+      stopwatch: createStopwatchActivity(),
+    },
+    result: undefined,
+  }));
 }
 
 export async function stopStopwatch(): Promise<ActivityState> {
@@ -362,13 +342,6 @@ export async function showActivityInMenuBar(): Promise<void> {
   } catch {
     // The user may have disabled the menu-bar command in Raycast settings.
   }
-}
-
-function hasRunningActivity(state: ActivityState, now = Date.now()): boolean {
-  return Boolean(
-    state.stopwatch ||
-    state.timers.some((timer) => getTimerRemainingMs(timer, now) > 0),
-  );
 }
 
 export async function getFavoriteTimers(): Promise<FavoriteTimer[]> {

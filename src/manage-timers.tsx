@@ -20,6 +20,7 @@ import {
   removeAllTimers,
   removeTimer,
   selectTimer,
+  showActivityInMenuBar,
   sortTimersByEnding,
   updateTimerName,
   type TimerActivity,
@@ -36,18 +37,21 @@ export default function Command() {
 
   async function selectTimerForMenuBar(timer: TimerActivity) {
     await selectTimer(timer.id);
+    await showActivityInMenuBar();
     await showHUD(`${getTimerTitle(timer)} Shown in Menu Bar`);
     await refreshActivity();
   }
 
   async function stopTimer(timer: TimerActivity) {
     await removeTimer(timer.id);
+    await showActivityInMenuBar();
     await showHUD(`${getTimerTitle(timer)} Stopped`);
     await refreshActivity();
   }
 
   async function stopAllTimers() {
     await removeAllTimers();
+    await showActivityInMenuBar();
     await showHUD("All Timers Stopped");
     await refreshActivity();
   }
@@ -59,6 +63,7 @@ export default function Command() {
 
   async function addTime(timer: TimerActivity, minutes: number) {
     await extendTimer(timer.id, minutes * 60 * 1000);
+    await showActivityInMenuBar();
     await showHUD(`Added ${minutes} Minutes to ${getTimerTitle(timer)}`);
     await refreshActivity();
   }
@@ -173,6 +178,7 @@ function RenameTimerForm({
 
   async function renameTimer(values: { name: string }) {
     await updateTimerName(timer.id, values.name);
+    await showActivityInMenuBar();
     await showHUD("Timer Renamed");
     await onRenamed();
     pop();

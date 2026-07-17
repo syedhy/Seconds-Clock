@@ -1,6 +1,10 @@
 import { showHUD } from "@raycast/api";
 
-import { getActivityState, stopStopwatch } from "./lib/activity";
+import {
+  getActivityState,
+  showActivityInMenuBar,
+  stopStopwatch,
+} from "./lib/activity";
 
 export default async function Command() {
   const state = await getActivityState();
@@ -11,5 +15,6 @@ export default async function Command() {
   }
 
   await stopStopwatch();
+  await showActivityInMenuBar();
   await showHUD("Stopwatch Stopped");
 }

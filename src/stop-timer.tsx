@@ -15,6 +15,7 @@ import {
   getTimerRemainingMs,
   getTimerTitle,
   removeTimer,
+  showActivityInMenuBar,
   sortTimersByEnding,
   type TimerActivity,
 } from "./lib/activity";
@@ -37,6 +38,7 @@ export default function Command() {
 
   async function stopTimer(timer: TimerActivity) {
     await removeTimer(timer.id);
+    await showActivityInMenuBar();
     await showHUD(`${getTimerTitle(timer)} Stopped`);
     await refreshActivity();
   }

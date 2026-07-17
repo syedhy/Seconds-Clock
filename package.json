@@ -60,9 +60,9 @@
     {
       "name": "menu-bar-clock",
       "title": "Seconds Clock Menu Bar",
-      "description": "Show active timers and stopwatch controls in the menu bar.",
+      "description": "Show active timers and stopwatch status in the menu bar.",
       "mode": "menu-bar",
-      "interval": "1m"
+      "interval": "10s"
     }
   ],
   "preferences": [

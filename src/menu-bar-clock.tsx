@@ -27,13 +27,6 @@ export default function Command() {
   const completionCheckInFlight = useRef(false);
 
   useEffect(() => {
-    // Other commands mutate shared activity state in separate processes. Poll
-    // once per second so this single menu-bar owner reflects those changes
-    // without launching competing MenuBarExtra instances.
-    void refreshActivity();
-  }, [nowMs, refreshActivity]);
-
-  useEffect(() => {
     if (completionCheckInFlight.current) {
       return;
     }
@@ -82,7 +75,7 @@ export default function Command() {
             : "Seconds Clock"
       }
       tooltip="Seconds Clock"
-      isLoading={isLoading || Boolean(displayedActivity)}
+      isLoading={isLoading}
     >
       {activityState ? (
         <MenuBarContent
