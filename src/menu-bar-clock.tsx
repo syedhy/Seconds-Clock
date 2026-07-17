@@ -29,7 +29,6 @@ export default function Command() {
     ? getSelectedTimer(activityState)
     : undefined;
   const displayedActivity = selectedTimer ?? activityState?.stopwatch;
-  const isStopwatchRunning = Boolean(activityState?.stopwatch);
   const completionCheckInFlight = useRef(false);
 
   async function runMenuAction(action: () => Promise<void>): Promise<void> {
@@ -82,8 +81,8 @@ export default function Command() {
     return null;
   }
 
-  // A running stopwatch is an ongoing activity, so keep the command loaded
-  // while its elapsed time is being rendered live.
+  // Keep the command loaded while an activity is active so live updates and
+  // menu actions are handled by the same running command instance.
   return (
     <MenuBarExtra
       title={
@@ -96,7 +95,7 @@ export default function Command() {
             : "Seconds Clock"
       }
       tooltip="Seconds Clock"
-      isLoading={isLoading || isActionRunning || isStopwatchRunning}
+      isLoading={isLoading || isActionRunning || Boolean(displayedActivity)}
     >
       {activityState ? (
         <MenuBarContent
@@ -121,7 +120,7 @@ function MenuBarContent({
   state: ActivityState;
   selectedTimer?: TimerActivity;
   now: number;
-  refreshActivity: () => Promise<void>;
+  refreshActivity: (nextState?: ActivityState) => Promise<void>;
   runMenuAction: (action: () => Promise<void>) => Promise<void>;
 }) {
   const otherTimers = sortTimersByEnding(state.timers).filter(
@@ -131,9 +130,9 @@ function MenuBarContent({
 
   function removeTimerAndRefresh(timerId: string): Promise<void> {
     return runMenuAction(async () => {
-      await removeTimer(timerId);
-      await showHUD("Timer Stopped");
-      await refreshActivity();
+      const nextState = await removeTimer(timerId);
+      await refreshActivity(nextState);
+      void showHUD("Timer Stopped");
     });
   }
 
@@ -142,24 +141,24 @@ function MenuBarContent({
     minutes: number,
   ): Promise<void> {
     return runMenuAction(async () => {
-      await extendTimer(timerId, minutes * 60 * 1000);
-      await showHUD(`Added ${minutes} Minutes`);
-      await refreshActivity();
+      const nextState = await extendTimer(timerId, minutes * 60 * 1000);
+      await refreshActivity(nextState);
+      void showHUD(`Added ${minutes} Minutes`);
     });
   }
 
   function selectTimerAndRefresh(timerId: string): Promise<void> {
     return runMenuAction(async () => {
-      await selectTimer(timerId);
-      await refreshActivity();
+      const nextState = await selectTimer(timerId);
+      await refreshActivity(nextState);
     });
   }
 
   function stopStopwatchAndRefresh(): Promise<void> {
     return runMenuAction(async () => {
-      await stopStopwatch();
-      await showHUD("Stopwatch Stopped");
-      await refreshActivity();
+      const nextState = await stopStopwatch();
+      await refreshActivity(nextState);
+      void showHUD("Stopwatch Stopped");
     });
   }
 

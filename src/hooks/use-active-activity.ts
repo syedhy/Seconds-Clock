@@ -8,11 +8,11 @@ export function useActiveActivity() {
   const requestId = useRef(0);
   const isMounted = useRef(true);
 
-  const refreshActivity = useCallback(async () => {
+  const refreshActivity = useCallback(async (nextState?: ActivityState) => {
     const currentRequestId = ++requestId.current;
 
     try {
-      const state = await getActivityState();
+      const state = nextState ?? (await getActivityState());
 
       if (!isMounted.current || currentRequestId !== requestId.current) {
         return;

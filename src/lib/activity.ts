@@ -133,20 +133,23 @@ export async function extendTimer(
   return nextState;
 }
 
-export async function selectTimer(timerId: string): Promise<void> {
+export async function selectTimer(timerId: string): Promise<ActivityState> {
   const state = await getActivityState();
   const timer = state.timers.find(
     (existingTimer) => existingTimer.id === timerId,
   );
 
   if (!timer) {
-    return;
+    return state;
   }
 
-  await saveActivityState({
+  const nextState = normalizeActivityState({
     ...state,
     selectedTimerId: timer.id,
   });
+
+  await saveActivityState(nextState);
+  return nextState;
 }
 
 export async function removeTimer(timerId: string): Promise<ActivityState> {
