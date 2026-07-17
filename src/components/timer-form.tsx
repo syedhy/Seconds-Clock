@@ -35,8 +35,12 @@ export function TimerForm() {
   }, []);
 
   async function startTimer(timer: ParsedTimerInput) {
-    await addTimer(timer.durationMs, timer.name);
-    await showActivityInMenuBar();
+    const { shouldShowMenuBar } = await addTimer(timer.durationMs, timer.name);
+
+    if (shouldShowMenuBar) {
+      await showActivityInMenuBar();
+    }
+
     await showHUD(`${timer.name || "Timer"} Started`);
     await closeMainWindow({ clearRootSearch: true });
   }

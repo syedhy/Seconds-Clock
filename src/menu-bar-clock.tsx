@@ -13,7 +13,6 @@ import {
   removeCompletedTimers,
   removeTimer,
   selectTimer,
-  showActivityInMenuBar,
   sortTimersByEnding,
   stopStopwatch,
   truncateMenuBarName,
@@ -32,6 +31,13 @@ export default function Command() {
   const displayedActivity = selectedTimer ?? activityState?.stopwatch;
   const completionCheckInFlight = useRef(false);
   const actionQueue = useRef(Promise.resolve());
+
+  useEffect(() => {
+    // Other commands mutate shared activity state in separate processes. Poll
+    // once per second so this single menu-bar owner reflects those changes
+    // without launching competing MenuBarExtra instances.
+    void refreshActivity();
+  }, [nowMs, refreshActivity]);
 
   async function runMenuAction(action: () => Promise<void>): Promise<void> {
     const queuedAction = actionQueue.current.then(async () => {
@@ -139,7 +145,6 @@ function MenuBarContent({
     return runMenuAction(async () => {
       const nextState = await removeTimer(timerId);
       await refreshActivity(nextState);
-      void showActivityInMenuBar();
       void showHUD("Timer Stopped").catch(() => undefined);
     });
   }
@@ -151,7 +156,6 @@ function MenuBarContent({
     return runMenuAction(async () => {
       const nextState = await extendTimer(timerId, minutes * 60 * 1000);
       await refreshActivity(nextState);
-      void showActivityInMenuBar();
       void showHUD(`Added ${minutes} Minutes`).catch(() => undefined);
     });
   }
@@ -160,7 +164,6 @@ function MenuBarContent({
     return runMenuAction(async () => {
       const nextState = await selectTimer(timerId);
       await refreshActivity(nextState);
-      void showActivityInMenuBar();
     });
   }
 
@@ -168,7 +171,6 @@ function MenuBarContent({
     return runMenuAction(async () => {
       const nextState = await stopStopwatch();
       await refreshActivity(nextState);
-      void showActivityInMenuBar();
       void showHUD("Stopwatch Stopped").catch(() => undefined);
     });
   }
