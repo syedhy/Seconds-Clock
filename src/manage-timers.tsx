@@ -13,15 +13,12 @@ import { useActiveActivity } from "./hooks/use-active-activity";
 import { useNow } from "./hooks/use-now";
 import {
   formatActivityDuration,
-  getSelectedTimer,
   getTimerRemainingMs,
   getTimerTitle,
   addFavoriteTimer,
   extendTimer,
   removeAllTimers,
   removeTimer,
-  selectTimer,
-  showActivityInMenuBar,
   sortTimersByEnding,
   updateTimerName,
   type TimerActivity,
@@ -32,27 +29,15 @@ export default function Command() {
   const nowMs = now.getTime();
   const { activityState, isLoading, refreshActivity } = useActiveActivity();
   const timers = activityState ? sortTimersByEnding(activityState.timers) : [];
-  const selectedTimer = activityState
-    ? getSelectedTimer(activityState)
-    : undefined;
-
-  async function selectTimerForMenuBar(timer: TimerActivity) {
-    await selectTimer(timer.id);
-    await showActivityInMenuBar();
-    await showActionToast(`${getTimerTitle(timer)} Shown in Menu Bar`);
-    await refreshActivity();
-  }
 
   async function stopTimer(timer: TimerActivity) {
     await removeTimer(timer.id);
-    await showActivityInMenuBar();
     await showActionToast(`${getTimerTitle(timer)} Stopped`);
     await refreshActivity();
   }
 
   async function stopAllTimers() {
     await removeAllTimers();
-    await showActivityInMenuBar();
     await showActionToast("All Timers Stopped");
     await refreshActivity();
   }
@@ -64,7 +49,6 @@ export default function Command() {
 
   async function addTime(timer: TimerActivity, minutes: number) {
     await extendTimer(timer.id, minutes * 60 * 1000);
-    await showActivityInMenuBar();
     await showActionToast(
       `Added ${minutes} Minutes to ${getTimerTitle(timer)}`,
     );
@@ -85,8 +69,6 @@ export default function Command() {
             key={timer.id}
             timer={timer}
             now={nowMs}
-            isSelected={timer.id === selectedTimer?.id}
-            onSelect={selectTimerForMenuBar}
             onStop={stopTimer}
             onStopAll={stopAllTimers}
             onSaveFavorite={saveTimerAsFavorite}
@@ -102,8 +84,6 @@ export default function Command() {
 function TimerListItem({
   timer,
   now,
-  isSelected,
-  onSelect,
   onStop,
   onStopAll,
   onSaveFavorite,
@@ -112,8 +92,6 @@ function TimerListItem({
 }: {
   timer: TimerActivity;
   now: number;
-  isSelected: boolean;
-  onSelect: (timer: TimerActivity) => Promise<void>;
   onStop: (timer: TimerActivity) => Promise<void>;
   onStopAll: () => Promise<void>;
   onSaveFavorite: (timer: TimerActivity) => Promise<void>;
@@ -125,14 +103,8 @@ function TimerListItem({
       title={getTimerTitle(timer)}
       subtitle={formatActivityDuration(getTimerRemainingMs(timer, now))}
       icon={Icon.Clock}
-      accessories={isSelected ? [{ text: "Menu Bar" }] : undefined}
       actions={
         <ActionPanel>
-          <Action
-            title="Show in Menu Bar"
-            icon={Icon.CheckCircle}
-            onAction={() => onSelect(timer)}
-          />
           <Action
             title="Stop Timer"
             icon={Icon.XMarkCircle}
@@ -181,7 +153,6 @@ function RenameTimerForm({
 
   async function renameTimer(values: { name: string }) {
     await updateTimerName(timer.id, values.name);
-    await showActivityInMenuBar();
     await showActionToast("Timer Renamed");
     await onRenamed();
     pop();

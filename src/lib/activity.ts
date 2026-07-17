@@ -333,14 +333,14 @@ async function isStaleActivityLock(): Promise<boolean> {
   }
 }
 
-export async function showActivityInMenuBar(): Promise<void> {
+export async function startTimerNotifications(): Promise<void> {
   try {
     await launchCommand({
-      name: "menu-bar-clock",
+      name: "timer-notifications",
       type: LaunchType.Background,
     });
   } catch {
-    // The user may have disabled the menu-bar command in Raycast settings.
+    // The timer remains persisted even if the notification worker is disabled.
   }
 }
 
@@ -598,16 +598,6 @@ export function formatDurationWords(durationMs: number): string {
 
 export function getTimerTitle(timer: TimerActivity): string {
   return timer.name || "Timer";
-}
-
-export function truncateMenuBarName(name: string): string {
-  const trimmedName = name.trim();
-
-  if (trimmedName.length <= 18) {
-    return trimmedName;
-  }
-
-  return `${trimmedName.slice(0, 17)}...`;
 }
 
 function normalizeActivityState(

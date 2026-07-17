@@ -1,6 +1,6 @@
 # Seconds Clock
 
-Seconds Clock is a focused digital clock for Raycast with always-visible seconds, polished multi-timer support, and a simple menu bar stopwatch.
+Seconds Clock is a focused digital clock for Raycast with always-visible seconds, polished multi-timer support, and a stopwatch.
 
 It is designed to stay lightweight: a large flip-clock-inspired Raycast view, named timers, one stopwatch, and one time-format preference. No alarms, world clocks, clipboard actions, or extra utilities.
 
@@ -28,7 +28,6 @@ Opens a focused timer form with:
 
 Shows all running timers with actions to:
 
-- Choose which timer appears in the menu bar
 - Rename timers
 - Save timers as favorites
 - Stop one timer
@@ -40,36 +39,28 @@ Stops the only running timer immediately, or shows a selection list when multipl
 
 ### Start Stopwatch
 
-Starts a stopwatch from zero and shows it in the menu bar.
+Starts a stopwatch from zero.
 
 ### Stop Stopwatch
 
 Stops the running stopwatch without affecting timers.
 
-### Seconds Clock Menu Bar
+### Timer Notifications
 
-Shows the selected timer, the soonest-ending timer, or the stopwatch in the macOS menu bar.
-
-The menu-bar item is hidden when there is no active timer or stopwatch.
+Runs in the background to detect completed timers and show a Raycast toast with the timer name.
 
 Timer behavior:
 
 - Multiple named timers at once
 - Countdown with seconds
-- Menu-bar title shows the selected timer, or the soonest-ending timer by default
-- Menu-bar timer actions include adding 5 or 30 minutes
-- Finished timers show a Raycast completion indication and are removed automatically
-
-Raycast controls menu-bar command lifecycles and background refresh timing. The
-menu-bar title refreshes when the menu is opened and during scheduled refreshes;
-macOS does not guarantee an exact per-second background update.
+- Add 5 or 30 minutes from Manage Timers
+- Finished timers show a named Raycast completion indication and are removed automatically
 
 Stopwatch behavior:
 
 - Counts up from zero
-- Shows seconds in the menu bar
-- Updates live while the stopwatch is running
-- Can be cleared from the menu-bar dropdown
+- Shows elapsed hours, minutes, and seconds in the command
+- Can be stopped without affecting timers
 
 ## Preference
 

@@ -2,7 +2,7 @@
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "seconds-clock",
   "title": "Seconds Clock",
-  "description": "A focused seconds clock with polished timers and a menu bar stopwatch.",
+  "description": "A focused seconds clock with polished multi-timer and stopwatch support.",
   "icon": "icon.png",
   "author": "syed_hyder",
   "license": "MIT",
@@ -36,7 +36,7 @@
     {
       "name": "manage-timers",
       "title": "Manage Timers",
-      "description": "View, rename, favorite, stop, and choose active timers.",
+      "description": "View, rename, favorite, extend, and stop timers.",
       "mode": "view"
     },
     {
@@ -48,7 +48,7 @@
     {
       "name": "start-stopwatch",
       "title": "Start Stopwatch",
-      "description": "Start a stopwatch that appears in the menu bar.",
+      "description": "Start a stopwatch that counts up from zero.",
       "mode": "no-view"
     },
     {
@@ -58,10 +58,10 @@
       "mode": "no-view"
     },
     {
-      "name": "menu-bar-clock",
-      "title": "Seconds Clock Menu Bar",
-      "description": "Show active timers and stopwatch status in the menu bar.",
-      "mode": "menu-bar",
+      "name": "timer-notifications",
+      "title": "Timer Notifications",
+      "description": "Notify you when a running timer finishes.",
+      "mode": "no-view",
       "interval": "10s"
     }
   ],
