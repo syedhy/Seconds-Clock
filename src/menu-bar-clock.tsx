@@ -1,4 +1,4 @@
-import { Icon, MenuBarExtra, Toast, showHUD, showToast } from "@raycast/api";
+import { MenuBarExtra, Toast, showToast } from "@raycast/api";
 import { useEffect, useRef } from "react";
 
 import { useActiveActivity } from "./hooks/use-active-activity";
@@ -10,9 +10,7 @@ import {
   getTimerRemainingMs,
   getTimerTitle,
   removeCompletedTimers,
-  sortTimersByEnding,
   truncateMenuBarName,
-  type ActivityState,
   type TimerActivity,
 } from "./lib/activity";
 
@@ -45,7 +43,6 @@ export default function Command() {
             : `${completedTimers.length} Timers Done`;
 
         await refreshActivity();
-        void showHUD(completedTitle).catch(() => undefined);
         void showToast({
           style: Toast.Style.Success,
           title: completedTitle,
@@ -61,8 +58,8 @@ export default function Command() {
     return null;
   }
 
-  // Keep the command loaded while an activity is active so every menu-bar
-  // entry continues to update from the same running command instance.
+  // The menu-bar item is intentionally display-only. Raycast refreshes its
+  // title from this command without attaching a clickable menu.
   return (
     <MenuBarExtra
       title={
@@ -76,80 +73,6 @@ export default function Command() {
       }
       tooltip="Seconds Clock"
       isLoading={isLoading}
-    >
-      {activityState ? (
-        <MenuBarContent
-          state={activityState}
-          selectedTimer={selectedTimer}
-          now={nowMs}
-        />
-      ) : null}
-    </MenuBarExtra>
-  );
-}
-
-function MenuBarContent({
-  state,
-  selectedTimer,
-  now,
-}: {
-  state: ActivityState;
-  selectedTimer?: TimerActivity;
-  now: number;
-}) {
-  const otherTimers = sortTimersByEnding(state.timers).filter(
-    (timer) => timer.id !== selectedTimer?.id,
-  );
-
-  return (
-    <>
-      {selectedTimer ? (
-        <MenuBarExtra.Section title="Menu Bar">
-          <TimerMenuItem
-            key={selectedTimer.id}
-            timer={selectedTimer}
-            now={now}
-            isSelected
-          />
-        </MenuBarExtra.Section>
-      ) : null}
-
-      {otherTimers.length > 0 ? (
-        <MenuBarExtra.Section title="Timers">
-          {otherTimers.map((timer) => (
-            <TimerMenuItem key={timer.id} timer={timer} now={now} />
-          ))}
-        </MenuBarExtra.Section>
-      ) : null}
-
-      {state.stopwatch ? (
-        <MenuBarExtra.Section title="Stopwatch">
-          <MenuBarExtra.Item
-            title="Stopwatch"
-            subtitle={formatActivityDuration(
-              getStopwatchElapsedMs(state.stopwatch, now),
-            )}
-            icon={Icon.Stopwatch}
-          />
-        </MenuBarExtra.Section>
-      ) : null}
-    </>
-  );
-}
-
-function TimerMenuItem({
-  timer,
-  now,
-  isSelected = false,
-}: {
-  timer: TimerActivity;
-  now: number;
-  isSelected?: boolean;
-}) {
-  return (
-    <MenuBarExtra.Item
-      title={`${getTimerMenuBarTitle(timer, now)}${isSelected ? " (Shown)" : ""}`}
-      icon={Icon.Clock}
     />
   );
 }

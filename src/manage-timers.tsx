@@ -4,7 +4,8 @@ import {
   Form,
   Icon,
   List,
-  showHUD,
+  Toast,
+  showToast,
   useNavigation,
 } from "@raycast/api";
 
@@ -38,33 +39,35 @@ export default function Command() {
   async function selectTimerForMenuBar(timer: TimerActivity) {
     await selectTimer(timer.id);
     await showActivityInMenuBar();
-    await showHUD(`${getTimerTitle(timer)} Shown in Menu Bar`);
+    await showActionToast(`${getTimerTitle(timer)} Shown in Menu Bar`);
     await refreshActivity();
   }
 
   async function stopTimer(timer: TimerActivity) {
     await removeTimer(timer.id);
     await showActivityInMenuBar();
-    await showHUD(`${getTimerTitle(timer)} Stopped`);
+    await showActionToast(`${getTimerTitle(timer)} Stopped`);
     await refreshActivity();
   }
 
   async function stopAllTimers() {
     await removeAllTimers();
     await showActivityInMenuBar();
-    await showHUD("All Timers Stopped");
+    await showActionToast("All Timers Stopped");
     await refreshActivity();
   }
 
   async function saveTimerAsFavorite(timer: TimerActivity) {
     await addFavoriteTimer(timer.durationMs, timer.name);
-    await showHUD(`${getTimerTitle(timer)} Saved as Favorite`);
+    await showActionToast(`${getTimerTitle(timer)} Saved as Favorite`);
   }
 
   async function addTime(timer: TimerActivity, minutes: number) {
     await extendTimer(timer.id, minutes * 60 * 1000);
     await showActivityInMenuBar();
-    await showHUD(`Added ${minutes} Minutes to ${getTimerTitle(timer)}`);
+    await showActionToast(
+      `Added ${minutes} Minutes to ${getTimerTitle(timer)}`,
+    );
     await refreshActivity();
   }
 
@@ -179,7 +182,7 @@ function RenameTimerForm({
   async function renameTimer(values: { name: string }) {
     await updateTimerName(timer.id, values.name);
     await showActivityInMenuBar();
-    await showHUD("Timer Renamed");
+    await showActionToast("Timer Renamed");
     await onRenamed();
     pop();
   }
@@ -205,4 +208,11 @@ function RenameTimerForm({
       />
     </Form>
   );
+}
+
+async function showActionToast(title: string): Promise<void> {
+  await showToast({
+    style: Toast.Style.Success,
+    title,
+  });
 }
