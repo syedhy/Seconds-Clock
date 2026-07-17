@@ -127,6 +127,7 @@ function MenuBarContent({
   const otherTimers = sortTimersByEnding(state.timers).filter(
     (timer) => timer.id !== selectedTimer?.id,
   );
+  const timerLabels = getUniqueTimerLabels(state.timers);
 
   function removeTimerAndRefresh(timerId: string): Promise<void> {
     return runMenuAction(async () => {
@@ -168,6 +169,7 @@ function MenuBarContent({
         <MenuBarExtra.Section title="Menu Bar">
           <TimerMenuItem
             timer={selectedTimer}
+            actionLabel={timerLabels.get(selectedTimer.id) ?? "Timer"}
             now={now}
             isSelected
             onSelect={selectTimerAndRefresh}
@@ -183,6 +185,7 @@ function MenuBarContent({
             <TimerMenuItem
               key={timer.id}
               timer={timer}
+              actionLabel={timerLabels.get(timer.id) ?? "Timer"}
               now={now}
               onSelect={selectTimerAndRefresh}
               onRemove={removeTimerAndRefresh}
@@ -211,6 +214,7 @@ function MenuBarContent({
 
 function TimerMenuItem({
   timer,
+  actionLabel,
   now,
   isSelected = false,
   onSelect,
@@ -218,6 +222,7 @@ function TimerMenuItem({
   onExtend,
 }: {
   timer: TimerActivity;
+  actionLabel: string;
   now: number;
   isSelected?: boolean;
   onSelect: (timerId: string) => Promise<void>;
@@ -233,25 +238,33 @@ function TimerMenuItem({
         <MenuBarExtra.Item title="Shown in Menu Bar" icon={Icon.CheckCircle} />
       ) : (
         <MenuBarExtra.Item
-          title="Show in Menu Bar"
+          title={`Show in Menu Bar: ${actionLabel}`}
           icon={Icon.CheckCircle}
-          onAction={() => onSelect(timer.id)}
+          onAction={() => {
+            void onSelect(timer.id);
+          }}
         />
       )}
       <MenuBarExtra.Item
-        title="Stop Timer"
+        title={`Stop Timer: ${actionLabel}`}
         icon={Icon.XMarkCircle}
-        onAction={() => onRemove(timer.id)}
+        onAction={() => {
+          void onRemove(timer.id);
+        }}
       />
       <MenuBarExtra.Item
-        title="Add 5 Minutes"
+        title={`Add 5 Minutes: ${actionLabel}`}
         icon={Icon.Plus}
-        onAction={() => onExtend(timer.id, 5)}
+        onAction={() => {
+          void onExtend(timer.id, 5);
+        }}
       />
       <MenuBarExtra.Item
-        title="Add 30 Minutes"
+        title={`Add 30 Minutes: ${actionLabel}`}
         icon={Icon.Plus}
-        onAction={() => onExtend(timer.id, 30)}
+        onAction={() => {
+          void onExtend(timer.id, 30);
+        }}
       />
     </MenuBarExtra.Submenu>
   );
@@ -265,4 +278,30 @@ function getTimerMenuBarTitle(timer: TimerActivity, now: number): string {
   }
 
   return `${truncateMenuBarName(timer.name)} ${remainingTime}`;
+}
+
+function getUniqueTimerLabels(timers: TimerActivity[]): Map<string, string> {
+  const labels = new Map<string, string>();
+  const counts = new Map<string, number>();
+  const occurrences = new Map<string, number>();
+
+  for (const timer of timers) {
+    const baseLabel = timer.name?.trim() || "Timer";
+    counts.set(baseLabel, (counts.get(baseLabel) ?? 0) + 1);
+  }
+
+  for (const timer of timers) {
+    const baseLabel = timer.name?.trim() || "Timer";
+    const occurrence = (occurrences.get(baseLabel) ?? 0) + 1;
+    occurrences.set(baseLabel, occurrence);
+
+    labels.set(
+      timer.id,
+      (counts.get(baseLabel) ?? 0) > 1
+        ? `${truncateMenuBarName(baseLabel)} ${occurrence}`
+        : truncateMenuBarName(baseLabel),
+    );
+  }
+
+  return labels;
 }
