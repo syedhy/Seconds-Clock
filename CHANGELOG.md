@@ -1,6 +1,6 @@
 # Seconds Clock Changelog
 
-## [Reliability Improvements] - 2026-07-18
+## [Reliability Improvements] - {PR_MERGE_DATE}
 
 - Updated the Raycast API dependency.
 - Reduced unnecessary LocalStorage polling in activity views.
@@ -9,7 +9,7 @@
 - Removed the unreliable background timer notification worker.
 - Kept Manage Timers open while actions show non-closing toasts.
 
-## [Initial Release] - 2026-07-18
+## [Initial Release] - {PR_MERGE_DATE}
 
 - Added a large flip-clock-inspired seconds clock.
 - Added 12-hour and 24-hour time format support.
