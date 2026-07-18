@@ -14,8 +14,8 @@ export default function Command() {
   const stopwatch = activityState?.stopwatch;
 
   const handleStop = async () => {
-    const nextState = await stopStopwatch();
-    await refreshActivity(nextState);
+    await stopStopwatch();
+    await refreshActivity();
   };
 
   return (

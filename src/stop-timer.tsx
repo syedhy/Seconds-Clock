@@ -36,8 +36,10 @@ export default function Command() {
   }, [hasAutoStopped, isLoading, timers]);
 
   async function stopTimer(timer: TimerActivity) {
-    await removeTimer(timer.id);
-    await showHUD(`${getTimerTitle(timer)} Stopped`);
+    const changed = await removeTimer(timer.id);
+    await showHUD(
+      changed ? `${getTimerTitle(timer)} Stopped` : "Timer No Longer Running",
+    );
     await refreshActivity();
   }
 

@@ -47,7 +47,8 @@ Stops the running stopwatch without affecting timers.
 
 ### Show Stopwatch
 
-Shows the current stopwatch elapsed time live in Raycast.
+Shows the current stopwatch elapsed time live in Raycast. Press `Command-K` to
+stop the stopwatch without leaving the view.
 
 Timer behavior:
 

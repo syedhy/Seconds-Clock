@@ -47,8 +47,11 @@ export default function Command() {
   }, [isLoading, nowMs, refreshActivity]);
 
   async function stopTimer(timer: TimerActivity) {
-    await removeTimer(timer.id);
-    await showActionToast(`${getTimerTitle(timer)} Stopped`);
+    const changed = await removeTimer(timer.id);
+    await showActionToast(
+      changed ? `${getTimerTitle(timer)} Stopped` : "Timer No Longer Running",
+      changed ? Toast.Style.Success : Toast.Style.Failure,
+    );
     await refreshActivity();
   }
 
@@ -64,9 +67,12 @@ export default function Command() {
   }
 
   async function addTime(timer: TimerActivity, minutes: number) {
-    await extendTimer(timer.id, minutes * 60 * 1000);
+    const changed = await extendTimer(timer.id, minutes * 60 * 1000);
     await showActionToast(
-      `Added ${minutes} Minutes to ${getTimerTitle(timer)}`,
+      changed
+        ? `Added ${minutes} Minutes to ${getTimerTitle(timer)}`
+        : "Timer No Longer Running",
+      changed ? Toast.Style.Success : Toast.Style.Failure,
     );
     await refreshActivity();
   }
@@ -168,8 +174,11 @@ function RenameTimerForm({
   const { pop } = useNavigation();
 
   async function renameTimer(values: { name: string }) {
-    await updateTimerName(timer.id, values.name);
-    await showActionToast("Timer Renamed");
+    const changed = await updateTimerName(timer.id, values.name);
+    await showActionToast(
+      changed ? "Timer Renamed" : "Timer No Longer Running",
+      changed ? Toast.Style.Success : Toast.Style.Failure,
+    );
     await onRenamed();
     pop();
   }
@@ -197,9 +206,12 @@ function RenameTimerForm({
   );
 }
 
-async function showActionToast(title: string): Promise<void> {
+async function showActionToast(
+  title: string,
+  style: Toast.Style = Toast.Style.Success,
+): Promise<void> {
   await showToast({
-    style: Toast.Style.Success,
+    style,
     title,
   });
 }

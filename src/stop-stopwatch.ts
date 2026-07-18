@@ -1,15 +1,14 @@
 import { showHUD } from "@raycast/api";
 
-import { getActivityState, stopStopwatch } from "./lib/activity";
+import { stopStopwatch } from "./lib/activity";
 
 export default async function Command() {
-  const state = await getActivityState();
+  const wasRunning = await stopStopwatch();
 
-  if (!state.stopwatch) {
+  if (!wasRunning) {
     await showHUD("No Stopwatch Running");
     return;
   }
 
-  await stopStopwatch();
   await showHUD("Stopwatch Stopped");
 }

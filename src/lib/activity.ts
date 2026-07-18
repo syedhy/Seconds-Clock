@@ -36,7 +36,6 @@ export type StopwatchActivity = {
 
 export type ActivityState = {
   timers: TimerActivity[];
-  selectedTimerId?: string;
   stopwatch?: StopwatchActivity;
 };
 
@@ -75,7 +74,6 @@ export async function addTimer(
       state: {
         ...state,
         timers,
-        selectedTimerId: state.selectedTimerId ?? getDefaultTimer(timers)?.id,
       },
       result: timer,
     };
@@ -87,8 +85,8 @@ export async function addTimer(
 export async function updateTimerName(
   timerId: string,
   name?: string,
-): Promise<ActivityState> {
-  const { state } = await updateActivityState((currentState) => ({
+): Promise<boolean> {
+  const { result } = await updateActivityState((currentState) => ({
     state: {
       ...currentState,
       timers: currentState.timers.map((timer) =>
@@ -100,17 +98,17 @@ export async function updateTimerName(
           : timer,
       ),
     },
-    result: undefined,
+    result: currentState.timers.some((timer) => timer.id === timerId),
   }));
 
-  return state;
+  return result;
 }
 
 export async function extendTimer(
   timerId: string,
   additionalMs: number,
-): Promise<ActivityState> {
-  const { state } = await updateActivityState((currentState) => ({
+): Promise<boolean> {
+  const { result } = await updateActivityState((currentState) => ({
     state: {
       ...currentState,
       timers: currentState.timers.map((timer) =>
@@ -123,45 +121,26 @@ export async function extendTimer(
           : timer,
       ),
     },
-    result: undefined,
+    result: currentState.timers.some((timer) => timer.id === timerId),
   }));
 
-  return state;
+  return result;
 }
 
-export async function selectTimer(timerId: string): Promise<ActivityState> {
-  const { state } = await updateActivityState((currentState) => ({
-    state: currentState.timers.some((timer) => timer.id === timerId)
-      ? {
-          ...currentState,
-          selectedTimerId: timerId,
-        }
-      : currentState,
-    result: undefined,
-  }));
-
-  return state;
-}
-
-export async function removeTimer(timerId: string): Promise<ActivityState> {
-  const { state } = await updateActivityState((currentState) => {
+export async function removeTimer(timerId: string): Promise<boolean> {
+  const { result } = await updateActivityState((currentState) => {
     const timers = currentState.timers.filter((timer) => timer.id !== timerId);
-    const selectedTimerId =
-      currentState.selectedTimerId === timerId
-        ? getDefaultTimer(timers)?.id
-        : currentState.selectedTimerId;
 
     return {
       state: {
         ...currentState,
         timers,
-        selectedTimerId,
       },
-      result: undefined,
+      result: timers.length !== currentState.timers.length,
     };
   });
 
-  return state;
+  return result;
 }
 
 export async function removeAllTimers(): Promise<ActivityState> {
@@ -169,7 +148,6 @@ export async function removeAllTimers(): Promise<ActivityState> {
     state: {
       ...currentState,
       timers: [],
-      selectedTimerId: undefined,
     },
     result: undefined,
   }));
@@ -187,16 +165,16 @@ export async function startStopwatch(): Promise<void> {
   }));
 }
 
-export async function stopStopwatch(): Promise<ActivityState> {
-  const { state } = await updateActivityState((currentState) => ({
+export async function stopStopwatch(): Promise<boolean> {
+  const { result } = await updateActivityState((currentState) => ({
     state: {
       ...currentState,
       stopwatch: undefined,
     },
-    result: undefined,
+    result: currentState.stopwatch !== undefined,
   }));
 
-  return state;
+  return result;
 }
 
 export async function removeCompletedTimers(
@@ -216,14 +194,9 @@ export async function removeCompletedTimers(
     const timers = state.timers.filter(
       (timer) => !completedTimerIds.has(timer.id),
     );
-    const selectedTimerId = completedTimerIds.has(state.selectedTimerId ?? "")
-      ? getDefaultTimer(timers)?.id
-      : state.selectedTimerId;
-
     await saveActivityStateUnlocked({
       ...state,
       timers,
-      selectedTimerId,
     });
 
     return completedTimers;
@@ -395,16 +368,6 @@ export async function removeFavoriteTimer(favoriteId: string): Promise<void> {
       ),
     );
   });
-}
-
-export function getSelectedTimer(
-  state: ActivityState,
-): TimerActivity | undefined {
-  const selectedTimer = state.timers.find(
-    (timer) => timer.id === state.selectedTimerId,
-  );
-
-  return selectedTimer ?? getDefaultTimer(state.timers);
 }
 
 export function getDefaultTimer(
@@ -592,15 +555,8 @@ function normalizeActivityState(
       isValidTimerActivity,
     ),
   );
-  const hasSelectedTimer = timers.some(
-    (timer) => timer.id === state?.selectedTimerId,
-  );
-
   return {
     timers,
-    selectedTimerId: hasSelectedTimer
-      ? state?.selectedTimerId
-      : getDefaultTimer(timers)?.id,
     stopwatch: isValidStopwatchActivity(state?.stopwatch)
       ? state.stopwatch
       : undefined,
